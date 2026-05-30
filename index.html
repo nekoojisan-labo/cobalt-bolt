@@ -86,32 +86,35 @@ function sfx(type){
 //  assets/ にPNGスプライトシートを置き、下のASSETSを設定すると有効化。
 //  画像が無い／未ロードのときは自動で従来のコード描画にフォールバックする。
 //======================================================================
+// 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
+// anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 const ASSETS = {
-  // 例) player:{ src:'assets/player.png', fw:48, fh:48, scale:1, ax:0.5, ay:1,
-  //        anims:{ idle:{row:0,frames:4,fps:6}, run:{row:1,frames:6,fps:12},
-  //                jump:{row:2,frames:1,fps:1}, shoot:{row:3,frames:2,fps:12} } }
-  // ↑ 素材配置後にここを各シートのコマ割りに合わせて記述する
+  // 例) player:{ fw:48, fh:48, scale:1, ax:0.5, ay:1, anims:{
+  //        idle:{src:'assets/player_idle.png', frames:4, fps:6},
+  //        run :{src:'assets/player_run.png',  frames:6, fps:12},
+  //        jump:{src:'assets/player_jump.png', frames:2, fps:6},
+  //        shoot:{src:'assets/player_shoot.png',frames:2, fps:12} } }
 };
-const IMG = {};
 function loadAssets(){
-  if(HEADLESS || typeof Image==='undefined') return;
-  for(const k in ASSETS){
-    const a=ASSETS[k], im=new Image();
-    a.ready=false; im.onload=()=>{a.ready=true;}; im.onerror=()=>{a.ready=false;}; im.src=a.src; IMG[k]=im;
+  if(typeof Image==='undefined') return;   // ブラウザ/検証環境でImageがあるときのみ
+  for(const k in ASSETS){ const a=ASSETS[k];
+    for(const name in (a.anims||{})){ const an=a.anims[name]; if(!an.src) continue;
+      const im=new Image(); an.ready=false; im.onload=()=>{an.ready=true;}; im.onerror=()=>{an.ready=false;}; im.src=an.src; an.img=im;
+    }
   }
 }
-// シートから1コマを描く。footX/footYは足元(底辺中央)のスクリーン座標。dir<0で左右反転。
+// 足元(底辺中央)のスクリーン座標 footX/footY に、anim の現在コマを描く。dir<0で反転。
 function drawSheet(key, anim, time, footX, footY, dir){
-  const a=ASSETS[key]; if(!a || !a.ready || !ctx) return false;
-  const an=a.anims[anim] || a.anims.idle; if(!an) return false;
-  const n=an.frames||1, base=an.from||0;
-  const f=base + (an.fps ? Math.floor(time*an.fps/60)%n : 0);
-  const fw=a.fw, fh=a.fh, sc=a.scale||1, w=fw*sc, h=fh*sc;
-  const sxp=f*fw, syp=(an.row||0)*fh;
+  const a=ASSETS[key]; if(!a || !ctx) return false;
+  let an=a.anims[anim]; if(!an || !an.ready) an=a.anims.idle;   // 無ければidleで代用
+  if(!an || !an.ready || !an.img) return false;
+  const fw=a.fw, fh=a.fh, sc=a.scale||1, w=fw*sc, h=fh*sc, n=an.frames||1;
+  const f=(an.fps ? Math.floor(time*an.fps/60)%n : 0);
+  const sxp=f*fw, syp=0;
   const dx=Math.round(footX - w*(a.ax!=null?a.ax:0.5)), dy=Math.round(footY - h*(a.ay!=null?a.ay:1));
   ctx.save();
-  if(dir<0){ ctx.translate(dx+w,0); ctx.scale(-1,1); ctx.drawImage(IMG[key], sxp,syp,fw,fh, 0,dy, w,h); }
-  else ctx.drawImage(IMG[key], sxp,syp,fw,fh, dx,dy, w,h);
+  if(dir<0){ ctx.translate(dx+w,0); ctx.scale(-1,1); ctx.drawImage(an.img, sxp,syp,fw,fh, 0,dy, w,h); }
+  else ctx.drawImage(an.img, sxp,syp,fw,fh, dx,dy, w,h);
   ctx.restore();
   return true;
 }
@@ -676,6 +679,7 @@ if(typeof globalThis!=='undefined'){
     consts:{W,H,GROUND_Y,LEVEL_W,ROOM_X,BOSS_TRIGGER,PW,PH},
     start:startGame,
     draw(){ render(); },                                          // 現在状態を描画（スクショ検証用）
+    assets:ASSETS, loadAssets,                                    // スプライト検証用
     set state(v){ state=v; },                                     // テスト用に画面状態を直接指定
     step(){ update(); for(const k in PRESS)PRESS[k]=false; },     // 1フレーム進める（描画なし）
     hold(k){ if(!keys[k])PRESS[k]=true; keys[k]=true; },
