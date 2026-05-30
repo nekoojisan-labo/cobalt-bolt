@@ -7,7 +7,7 @@
 
 ## 🎮 遊び方
 
-**▶ オンラインで遊ぶ:** （GitHub Pages 公開URL）
+**▶ オンラインで遊ぶ:** https://nekoojisan-labo.github.io/cobalt-bolt/
 
 ローカルで遊ぶ場合は `index.html` をブラウザで開くだけ。
 
