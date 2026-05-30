@@ -108,7 +108,21 @@ const ASSETS = {
     walk:{src:'assets/enemy_walker.png', frames:4, fps:8},
     idle:{src:'assets/enemy_walker.png', frames:4, fps:8},
   }},
-  // flyer/turret/boss は未生成 → コード描画のまま
+  flyer:{ fw:128, fh:128, scale:0.2, ax:0.5, ay:1, anims:{
+    fly :{src:'assets/enemy_flyer.png', frames:4, fps:12},
+    idle:{src:'assets/enemy_flyer.png', frames:4, fps:12},
+  }},
+  turret:{ fw:128, fh:128, scale:0.26, ax:0.5, ay:1, anims:{
+    idle:{src:'assets/enemy_turret.png',      frames:1, fps:1},
+    fire:{src:'assets/enemy_turret_fire.png', frames:2, fps:12},
+  }},
+  boss:{ fw:512, fh:512, scale:0.13, ax:0.5, ay:1, anims:{
+    idle :{src:'assets/boss_idle.png',  frames:2, fps:4},
+    jump :{src:'assets/boss_jump.png',  frames:2, fps:6},
+    shoot:{src:'assets/boss_shoot.png', frames:3, fps:10},
+    dash :{src:'assets/boss_dash.png',  frames:2, fps:10},
+    death:{src:'assets/boss_death.png', frames:4, fps:6},
+  }},
 };
 function loadAssets(){
   if(typeof Image==='undefined') return;   // ブラウザ/検証環境でImageがあるときのみ
@@ -593,7 +607,7 @@ function drawEnemy(e){
   const f=e.hit>0 && Math.floor(e.hit/2)%2===0;
   if(!e.alive){ const t=e.deathT,r=t*2.2; for(let i=0;i<6;i++){const a=i*Math.PI/3+t*0.3; px(x+10+Math.cos(a)*r,y+9+Math.sin(a)*r,3,3,t<6?'#fff':'#ffd23f');} return; }
   // 高精細スプライト優先（種別ごとにassets設定があれば）
-  const _en = e.type==='flyer'?'fly' : e.type==='met'?(e.phase==='open'?'open':'hide') : e.type==='walker'?'walk' : 'idle';
+  const _en = e.type==='flyer'?'fly' : e.type==='met'?(e.phase==='open'?'open':'hide') : e.type==='walker'?'walk' : e.type==='turret'?((e.timer||99)<16?'fire':'idle') : 'idle';
   if(drawSheet(e.type, _en, e.t, e.x-camX+e.w/2, e.y+e.h, (e.dir||(sign(player.x-e.x)||1)))) return;
   const O='#1a0a22', Ob='#06121f';
   if(e.type==='met'){
@@ -626,9 +640,12 @@ function drawBoss(){
   if(!boss)return;
   const x=Math.round(boss.x-camX), y=Math.round(boss.y), d=boss.dir;
   const f=boss.hit>0 && Math.floor(boss.hit/2)%2===0;
-  if(boss.dead){ return; }
-  // 高精細スプライト優先
-  const _bs = boss.state==='shoot'?'shoot' : boss.state==='dash'?'run' : boss.state==='jump'?'jump' : 'idle';
+  if(boss.dead){
+    if(drawSheet('boss','death', boss.deadT, boss.x-camX+boss.w/2, boss.y+boss.h, boss.dir)) return;
+    return;
+  }
+  // 高精細スプライト優先（state→アニメ）
+  const _bs = boss.state==='shoot'?'shoot' : boss.state==='dash'?'dash' : boss.state==='jump'?'jump' : 'idle';
   if(drawSheet('boss', _bs, boss.timer, boss.x-camX+boss.w/2, boss.y+boss.h, boss.dir)) return;
   ctx.save();
   if(d<0){ctx.translate(x+boss.w,y);ctx.scale(-1,1);} else ctx.translate(x,y);

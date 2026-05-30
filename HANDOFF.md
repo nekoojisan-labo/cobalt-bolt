@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-30 — [claude] 塗り2D反映: flyer/turret/ボス＋弾3種（前景キャラ完全2D化）
+- 反映: `ASSETS` に flyer(fly4f,scale0.2)/turret(idle+fire,scale0.26)/boss(idle/jump/shoot/dash/death,scale0.13) 追加。`BULLET_SPR`に buster/charge/enemy。
+- ディスパッチ調整: drawEnemyのturret→timer<16でfire、drawBossをstate別(idle/jump/shoot/dash)＋dead時death表示に。
+- 検証: preview(HD)で boss部屋(hero+巨大ボス+flyer)・射撃(buster砲口一致)・チャージ(電撃球) 確認。`harness`=24/24維持。
+- **達成**: 主人公・met・walker・flyer・turret・ボス・弾 = **前景キャラと弾が全て塗り2D**。
+- **残り（最終段階）**: 背景3層 / 地形テクスチャ / FX(muzzle/hit/explosion/dust等)。→ [claude]が画像描画フック(背景パララックス/地形/FX)を実装 → [codex]が ART_DESIGN.md §3/§4 で生成 → 反映。
+
 ## 2026-05-30 - [codex] boss painterly sprite set generated
 - Saved `assets/boss_idle.png` - 2 frames, 512x512 per frame, horizontal strip 1024x512; right-facing deep-crimson/steel boss master with horns, red eyes, yellow core, and oversized energy-emitter arm.
 - Saved `assets/boss_jump.png` - 2 frames, 512x512 per frame, horizontal strip 1024x512; same boss design crouch/leap poses.

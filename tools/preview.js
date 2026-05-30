@@ -53,4 +53,8 @@ G.hold('x'); G.step(); G.draw(); G.release('x');   // 発射直後（弾が砲�
 clear(); G.start(); G.enemies.length=0; G.releaseAll(); for(let i=0;i<8;i++)G.step(); G.player.x=240; G.player.dir=1;
 for(let i=0;i<50;i++){G.hold('x');G.step();} G.release('x'); G.step(); G.step(); G.draw();
 { const dx=Math.round((G.player.x-G.camX)*RS); save(path.join(__dirname,'preview_charge_zoom.png'),[Math.max(0,dx-120),460,820,560,2]); }
-console.log('preview saved (1920x1080): play/idle/run/left/shoot/charge');
+// boss（ボス部屋）
+clear(); G.start(); G.player.x=G.consts.BOSS_TRIGGER+5; for(let i=0;i<5;i++)G.step();
+G.boss.state='idle'; G.boss.timer=0; for(let i=0;i<12;i++)G.step(); G.draw();
+save(path.join(__dirname,'preview_boss.png'));
+console.log('preview saved (1920x1080): play/idle/run/left/shoot/charge/boss');
