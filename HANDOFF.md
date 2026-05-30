@@ -4,6 +4,11 @@
 
 ---
 
+## 2026-05-30 — [codex] bullet_buster projectile sprite generated
+- Saved `assets/bullet_buster.png` — 2 frames, 96x96 per frame, horizontal strip 192x96; high-fidelity hand-painted cyan energy bolt, right-facing, transparent RGBA.
+- Verification: exact dimensions and alpha/corner transparency confirmed after image_gen chroma-key removal. No code or hitboxes changed.
+- Next for Claude: wire/use the existing bullet image hook only if needed; asset is ready.
+
 ## 2026-05-30 — [claude] フィードバック修正: アニメ優先度／弾の発射位置／弾の画像フック
 - ユーザー指摘の修正:
   1. **チャージしたまま移動でチャージポーズ固着** → `drawPlayer`のanim選択で移動中は必ずrun優先に修正。
