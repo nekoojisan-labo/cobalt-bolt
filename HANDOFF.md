@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] ui_hp_boss painterly boss HP frame generated
+- Saved `assets/ui_hp_boss.png` - 360x60 RGBA transparent PNG; horizontal crimson/red sci-fi boss HP bar frame with an intentionally empty inner channel for code-drawn fill.
+- Verification: exact 360x60 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, no visible magenta key residue (`keyish=0`), and inner fill channel fully transparent (`channel=(45,16,270,28)`, `channel_alpha_max=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and verify `assets/ground_fill.png`.
+
 ## 2026-05-31 - [codex] ui_hp painterly player HP frame generated
 - Saved `assets/ui_hp.png` - 360x70 RGBA transparent PNG; horizontal cobalt-blue/cyan sci-fi HP bar frame with an intentionally empty inner channel for code-drawn fill.
 - Verification: exact 360x70 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, no visible magenta key residue (`keyish=0`), and inner fill channel fully transparent (`channel=(41,22,278,27)`, `channel_alpha_max=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
