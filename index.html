@@ -228,11 +228,11 @@ function shootE(x,y,vx,vy,c='#ff5a4a'){ eBullets.push({x,y,w:7,h:7,vx,vy,c,life:
 //======================================================================
 const PW=18, PH=24;
 const player={x:80,y:GROUND_Y-PH,w:PW,h:PH,vx:0,vy:0,dir:1,onGround:false,
-  hp:16,maxhp:16,inv:0,shootCD:0,charge:0,wasShoot:false,
+  hp:24,maxhp:24,inv:0,shootCD:0,charge:0,wasShoot:false,
   dead:false,deadT:0,coyote:0,jumpBuf:0,anim:0,blink:0};
 function resetPlayer(){
   Object.assign(player,{x:80,y:GROUND_Y-PH,vx:0,vy:0,dir:1,onGround:false,
-    hp:16,maxhp:16,inv:0,shootCD:0,charge:0,wasShoot:false,
+    hp:24,maxhp:24,inv:0,shootCD:0,charge:0,wasShoot:false,
     dead:false,deadT:0,coyote:0,jumpBuf:0,anim:0,blink:0});
 }
 
@@ -296,7 +296,7 @@ function updatePlayer(){
 function hurt(dmg,fall){
   if(player.dead) return;
   if(player.inv>0 && !fall) return;
-  player.hp-=dmg; player.inv=60;
+  player.hp-=dmg; player.inv=72;
   if(player.hp<=0){player.hp=0;player.dead=true;player.deadT=0;sfx('boom');}
   else{ sfx('hurt'); if(!fall){player.vy=-3.5;player.vx=-player.dir*2;} }
 }
@@ -415,7 +415,7 @@ function updateEnemies(){
       }
     }
 
-    if(!player.dead && aabb(player,e)) hurt(3,false);
+    if(!player.dead && aabb(player,e)) hurt(2,false);
   }
   for(let i=enemies.length-1;i>=0;i--) if(!enemies[i].alive && enemies[i].deathT>16) enemies.splice(i,1);
 }
@@ -485,7 +485,7 @@ function updateBullets(){
         if(guarded){ if(!b.charge){b.life=0;} boom(b.x,b.y,'#ffd23f'); }
         else{
           e.hp-=b.dmg; e.hit=6; spawnFx('hit', b.x, b.y+b.h/2);
-          if(e.hp<=0){ e.alive=false; e.deathT=0; boom(e.x+e.w/2,e.y+e.h/2,'#ff9a3c'); spawnFx('explosion', e.x+e.w/2, e.y+e.h/2); sfx('boom'); }
+          if(e.hp<=0){ e.alive=false; e.deathT=0; boom(e.x+e.w/2,e.y+e.h/2,'#ff9a3c'); spawnFx('explosion', e.x+e.w/2, e.y+e.h/2); dropItem(e.x+e.w/2, e.y+e.h/2); sfx('boom'); }
           else sfx('hit');
           if(!b.charge){ b.life=0; }
         }
@@ -516,23 +516,29 @@ const ITEM_SPR={  // assets配置で画像化。無ければ図形フォール�
   heal_s:{src:'assets/item_heal_s.png', size:22},
   heal_l:{src:'assets/item_heal_l.png', size:30},
 };
-const ITEM_HEAL={ heal_s:6, heal_l:16 };
-function buildItems(){
-  items=[
-    {type:'heal_s', x:1486, y:GROUND_Y-22, w:16, h:16, taken:false, t:0},
-    {type:'heal_l', x:2600, y:GROUND_Y-24, w:18, h:18, taken:false, t:0},
-    {type:'heal_s', x:3560, y:GROUND_Y-22, w:16, h:16, taken:false, t:0},
-  ];
+const ITEM_HEAL={ heal_s:8, heal_l:24 };
+function buildItems(){ items=[]; }                       // 固定配置なし＝敵のランダムドロップ式
+// 敵撃破時に確率ドロップ（小80%/大20%）。落下して地面に乗る。
+function dropItem(x,y,bigChance){
+  if(Math.random()>=0.24) return;                        // ドロップ率24%
+  const big=Math.random()<(bigChance||0.2);
+  const w=big?18:16, h=big?18:16;
+  items.push({type:big?'heal_l':'heal_s', x:x-w/2, y:y-h/2, w, h, taken:false, t:0, vy:0});
 }
 function updateItems(){
   for(const it of items){
     if(it.taken) continue; it.t++;
+    // 簡易重力で地面に着地
+    it.vy=clamp((it.vy||0)+GRAV,-20,TERM); it.y+=it.vy;
+    for(const s of solids) if(aabb(it,s)){ if(it.vy>0){it.y=s.y-it.h;it.vy=0;} else if(it.vy<0){it.y=s.y+s.h;it.vy=0;} }
+    if(it.y>H+40) it.taken=true;                          // 穴に落ちたら消滅
     if(!player.dead && player.hp>0 && aabb(player,it)){
       it.taken=true;
       player.hp=Math.min(player.maxhp, player.hp+(ITEM_HEAL[it.type]||0));
       sfx('charge'); boom(it.x+it.w/2, it.y+it.h/2, '#7fff9f');
     }
   }
+  for(let i=items.length-1;i>=0;i--) if(items[i].taken && items[i].t>30) items.splice(i,1);  // 掃除
 }
 function drawItems(){
   for(const it of items){
@@ -577,7 +583,7 @@ function update(){
   updatePlayer();
   updateEnemies();
   updateItems();
-  for(const hz of hazards){ if(!player.dead && aabb(player,hz)) hurt(3,false); }  // スパイク帯
+  for(const hz of hazards){ if(!player.dead && aabb(player,hz)) hurt(2,false); }  // スパイク帯
 
   if(!bossActive && player.x>BOSS_TRIGGER) spawnBoss();
   if(bossActive){
@@ -694,11 +700,11 @@ function drawPlayer(){
   if(player.inv>0 && Math.floor(player.blink/3)%2===0 && !player.dead) return;
   if(player.dead){ return; }
   // 高精細スプライトがあれば優先（無ければ下のコード描画にフォールバック）
-  // 移動中は必ず run（チャージ/射撃ポーズで固まらないように）
-  const _anim = player.inv>44 ? 'hurt'
+  const _mv=Math.abs(player.vx)>0.1, _sh=player.shootCD>5;
+  const _anim = player.inv>56 ? 'hurt'
     : !player.onGround ? 'jump'
-    : Math.abs(player.vx)>0.1 ? 'run'
-    : player.shootCD>5 ? 'shoot'
+    : _mv ? (_sh && ASSETS.player.anims.runshoot ? 'runshoot' : 'run')  // 走り撃ち（素材あれば）
+    : _sh ? 'shoot'
     : player.charge>0 ? 'charge'
     : 'idle';
   if(drawSheet('player', _anim, player.blink, player.x-camX+player.w/2, player.y+player.h, player.dir)) return;

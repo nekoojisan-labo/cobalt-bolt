@@ -162,10 +162,11 @@ if(gm){
 
 // ---- T16: 回復アイテムでHP回復 ----
 G.start(); G.releaseAll(); for(let i=0;i<5;i++)G.step();
-const it=G.items && G.items[0];
-if(it){
-  G.player.hp=4; G.player.x=it.x; G.player.y=G.consts.GROUND_Y-G.consts.PH;
-  const before=G.player.hp; G.step();
+// ドロップ式：アイテムを直接生成して取得ロジックを検証
+G.player.y=G.consts.GROUND_Y-G.consts.PH;
+const it={type:'heal_s', x:G.player.x, y:G.player.y+4, w:16, h:16, taken:false, t:0, vy:0};
+if(G.items){
+  G.items.push(it); G.player.hp=4; const before=G.player.hp; G.step();
   check('回復アイテムでHPが増える', G.player.hp>before && it.taken, `hp=${G.player.hp}/${before} taken=${it.taken}`);
 } else check('回復アイテムでHPが増える', false, 'items未公開');
 
