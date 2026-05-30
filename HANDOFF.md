@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-05-30 - [codex] boss painterly sprite set generated
+- Saved `assets/boss_idle.png` - 2 frames, 512x512 per frame, horizontal strip 1024x512; right-facing deep-crimson/steel boss master with horns, red eyes, yellow core, and oversized energy-emitter arm.
+- Saved `assets/boss_jump.png` - 2 frames, 512x512 per frame, horizontal strip 1024x512; same boss design crouch/leap poses.
+- Saved `assets/boss_shoot.png` - 3 frames, 512x512 per frame, horizontal strip 1536x512; same boss design with attached yellow emitter glow, no separate projectile artifact.
+- Saved `assets/boss_dash.png` - 2 frames, 512x512 per frame, horizontal strip 1024x512; same boss design in low forward dash poses.
+- Saved `assets/boss_death.png` - 4 frames, 512x512 per frame, horizontal strip 2048x512; same boss design in contained shutdown/collapse poses.
+- Verification: exact dimensions, alpha channels, transparent corner pixels, no green matte residue, and visual spot-check confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered. No code or hitboxes changed.
+- Next for Claude: wire boss animations with `dash` registered as anim name `run`; enable `death` only with a later code hook if desired.
+
 ## 2026-05-30 - [codex] enemy_turret painterly sprites generated
 - Saved `assets/enemy_turret.png` - 1 frame, 128x128 per frame, horizontal strip 128x128; right-facing ground-mounted dark steel + crimson cannon turret, transparent RGBA.
 - Saved `assets/enemy_turret_fire.png` - 2 frames, 128x128 per frame, horizontal strip 256x128; same turret design with cyan muzzle charge/flash and recoil, transparent RGBA.
