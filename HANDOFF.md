@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-05-30 — [claude] エンジン1920×1080化＋塗り2D主人公を反映（HD化成功）
+- Codexの塗り2D素材(player_idle 5f/1280×256, player_run 8f/2048×256)は**本物の高精細2D**を確認（金属艶・発光・マント・設計書準拠）。
+- **エンジンHD改修**: 内部1920×1080化（RS=4／render冒頭で`setTransform(RS,...)`／`imageSmoothingEnabled=true`／CSS`image-rendering:auto`／fitをスムーズ拡縮）。ワールド座標(480×270)・物理・当たり判定は**不変**。
+- `ASSETS.player` を fw256/fh256・idle5f・run8f・scale0.16・ay0.98 に更新。
+- `tools/preview.js` を 1920×1080・setTransform対応に更新→ idle/run/反転すべて**接地◎・高精細表示◎**を確認。`node harness.js`=24/24維持。
+- **既知**: `tools/shot.js`・`tools/spritecheck.js` は旧480×270前提でsetTransform未対応＝HD化後は要更新（未対応のまま。検証はpreview.jsを使う）。
+- **次タスク（分担）**:
+  - [codex] ART_DESIGN.md に沿って塗り2Dを継続生成: 主人公 jump/shoot/charge/hurt → 敵4種 → ボス → 弾/FX → 地形/背景/プロップ → UI。**Codex内蔵image_gen＋各章STYLE HEADER**で。
+  - [claude] 背景3層/地形テクスチャ/弾・FX の**画像描画フック追加**＋各素材の反映・検証。`shot/spritecheck`のHD対応。
+
 ## 2026-05-30 - [codex] High-fidelity 2D player idle/run assets generated
 - Used real image generation: Codex built-in `image_gen` with the `ART_DESIGN.md` section 1 STYLE HEADER plus the `player_idle` / `player_run` English prompts, generated on chroma-key green and locally converted to alpha PNGs.
 - Saved `assets/player_idle.png` - 5 frames, 256x256 per frame, horizontal strip 1280x256, RGBA transparent PNG.

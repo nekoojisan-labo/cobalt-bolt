@@ -8,14 +8,14 @@
   html,body{margin:0;height:100%;background:#05060c;overflow:hidden;
     font-family:'Segoe UI','Yu Gothic UI',sans-serif;}
   #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
-  canvas{image-rendering:pixelated;image-rendering:crisp-edges;
+  canvas{image-rendering:auto;
     box-shadow:0 0 0 3px #0a0e1a,0 0 40px rgba(60,120,255,.35);background:#000;}
   #hint{position:fixed;bottom:8px;left:0;right:0;text-align:center;color:#5a6680;
     font-size:12px;letter-spacing:1px;user-select:none;}
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="game" width="480" height="270"></canvas></div>
+<div id="wrap"><canvas id="game" width="1920" height="1080"></canvas></div>
 <div id="hint">← → 移動 ／ Z ジャンプ ／ X ショット（長押しでチャージ） ／ Enter 決定・リスタート</div>
 <script>
 //======================================================================
@@ -27,18 +27,19 @@
 "use strict";
 const HEADLESS = typeof globalThis!=='undefined' && globalThis.__HEADLESS;
 
-// ---------- 内部解像度 ----------
-const W=480, H=270;
-const canvas = (typeof document!=='undefined') ? document.getElementById('game') : {width:W,height:H,style:{},getContext:()=>null};
+// ---------- 解像度 ----------
+// W,H = ワールド座標（物理・当たり判定の基準・不変）。実描画は RS 倍の 1920x1080。
+const W=480, H=270, RS=4, VW=W*RS, VH=H*RS;
+const canvas = (typeof document!=='undefined') ? document.getElementById('game') : {width:VW,height:VH,style:{},getContext:()=>null};
 const ctx = canvas.getContext ? canvas.getContext('2d') : null;
-if(ctx) ctx.imageSmoothingEnabled=false;
+if(ctx){ canvas.width=VW; canvas.height=VH; ctx.imageSmoothingEnabled=true; }
 
 function fit(){
   if(HEADLESS || !ctx) return;
-  const s=Math.max(1,Math.min(Math.floor(innerWidth/W),Math.floor(innerHeight/H)));
-  canvas.width=W;canvas.height=H;
-  canvas.style.width=(W*s)+'px';canvas.style.height=(H*s)+'px';
-  ctx.imageSmoothingEnabled=false;
+  canvas.width=VW; canvas.height=VH;                       // バックストアは常に 1920x1080
+  const s=Math.min(innerWidth/VW, innerHeight/VH);         // ウィンドウにフィット（スムーズ拡縮）
+  canvas.style.width=Math.round(VW*s)+'px'; canvas.style.height=Math.round(VH*s)+'px';
+  ctx.imageSmoothingEnabled=true;
 }
 if(!HEADLESS && typeof window!=='undefined'){ addEventListener('resize',fit); fit(); }
 
@@ -89,10 +90,11 @@ function sfx(type){
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 const ASSETS = {
-  player:{ fw:48, fh:48, scale:0.62, ax:0.5, ay:1, anims:{
-    idle:{src:'assets/player_idle.png', frames:4, fps:6},
-    run :{src:'assets/player_run.png',  frames:6, fps:12},
-    // jump/shoot は未生成のため idle で代用（drawSheetが自動フォールバック）
+  // 高精細2D(塗り)・256pxフレーム。scale/ayは見た目に合わせて調整。
+  player:{ fw:256, fh:256, scale:0.16, ax:0.5, ay:0.98, anims:{
+    idle:{src:'assets/player_idle.png', frames:5, fps:6},
+    run :{src:'assets/player_run.png',  frames:8, fps:14},
+    // jump/shoot/charge/hurt は未生成のため idle で代用（drawSheetが自動フォールバック）
   }},
 };
 function loadAssets(){
@@ -647,6 +649,7 @@ function drawClear(){
 
 function render(){
   if(!ctx)return;
+  if(ctx.setTransform)ctx.setTransform(RS,0,0,RS,0,0);   // ワールド→1920x1080(4倍)基準変換
   ctx.save();
   if(shake>0)ctx.translate(rnd(-shake,shake)*0.4,rnd(-shake,shake)*0.4);
   if(state==='title'){ drawTitle(); ctx.restore(); return; }

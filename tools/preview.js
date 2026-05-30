@@ -2,7 +2,8 @@
 // ゲーム画面をPNG出力して「実際にスプライトが載った見た目」を確認する。
 const fs=require('fs'), zlib=require('zlib'), vm=require('vm'), path=require('path');
 const REPO=path.join(__dirname,'..');
-const W=480,H=270,SCALE=3;
+const RS=4;                       // ゲームの内部レンダースケール(1920x1080)
+const W=480*RS,H=270*RS,SCALE=1;  // フレームバッファ=実描画解像度
 const buf=new Uint8Array(W*H*4); const clear=()=>buf.fill(0);
 function parseColor(c){if(typeof c==='object'&&c&&c.__grad)return c;if(typeof c!=='string')return{r:255,g:0,b:255,a:1};c=c.trim();if(c[0]==='#'){let h=c.slice(1);if(h.length===3)h=h.split('').map(x=>x+x).join('');return{r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16),a:1};}const m=c.match(/rgba?\(([^)]+)\)/);if(m){const p=m[1].split(',').map(parseFloat);return{r:p[0],g:p[1],b:p[2],a:p[3]===undefined?1:p[3]};}return{r:255,g:0,b:255,a:1};}
 function setPx(x,y,col){x|=0;y|=0;if(x<0||y<0||x>=W||y>=H)return;const i=(y*W+x)*4,a=col.a===undefined?1:col.a;if(a<=0)return;if(a>=1){buf[i]=col.r;buf[i+1]=col.g;buf[i+2]=col.b;buf[i+3]=255;}else{buf[i]=col.r*a+buf[i]*(1-a);buf[i+1]=col.g*a+buf[i+1]*(1-a);buf[i+2]=col.b*a+buf[i+2]*(1-a);buf[i+3]=255;}}
@@ -11,6 +12,7 @@ let t={sx:1,sy:1,tx:0,ty:0};const stack=[];
 function gradColor(s,u){if(!s.length)return{r:0,g:0,b:0,a:1};if(u<=s[0].o)return s[0].c;for(let i=1;i<s.length;i++){if(u<=s[i].o){const a=s[i-1],b=s[i],k=(u-a.o)/((b.o-a.o)||1);return{r:a.c.r+(b.c.r-a.c.r)*k,g:a.c.g+(b.c.g-a.c.g)*k,b:a.c.b+(b.c.b-a.c.b)*k,a:1};}}return s[s.length-1].c;}
 const ctx={imageSmoothingEnabled:false,fillStyle:'#000',font:'',textAlign:'left',textBaseline:'alphabetic',
   save(){stack.push({...t});},restore(){if(stack.length)t=stack.pop();},translate(dx,dy){t.tx+=t.sx*dx;t.ty+=t.sy*dy;},scale(ax,ay){t.sx*=ax;t.sy*=ay;},
+  setTransform(a,b,c,d,e,f){t={sx:a,sy:d,tx:e,ty:f};},
   createLinearGradient(x0,y0,x1,y1){return{__grad:true,p0:{x:t.tx+t.sx*x0,y:t.ty+t.sy*y0},p1:{x:t.tx+t.sx*x1,y:t.ty+t.sy*y1},stops:[],addColorStop(o,c){this.stops.push({o,c:parseColor(c)});}};},
   fillRect(x,y,w,h){const xa=t.tx+t.sx*x,xb=t.tx+t.sx*(x+w),ya=t.ty+t.sy*y,yb=t.ty+t.sy*(y+h);const x0=Math.floor(Math.min(xa,xb)),x1=Math.ceil(Math.max(xa,xb)),y0=Math.floor(Math.min(ya,yb)),y1=Math.ceil(Math.max(ya,yb));const fs=this.fillStyle;if(fs&&fs.__grad){const gx=fs.p1.x-fs.p0.x,gy=fs.p1.y-fs.p0.y,l2=(gx*gx+gy*gy)||1;for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++){let u=((px-fs.p0.x)*gx+(py-fs.p0.y)*gy)/l2;u=u<0?0:u>1?1:u;setPx(px,py,gradColor(fs.stops,u));}}else{const col=parseColor(fs);for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++)setPx(px,py,col);}},
   fillText(){},
@@ -31,14 +33,16 @@ G.loadAssets(); // index.html の ASSETS をそのまま読み込む（実PNG）
 const rd=G.assets.player&&G.assets.player.anims.idle.ready;
 console.log('player idle ready =', rd, ' run ready =', G.assets.player&&G.assets.player.anims.run.ready);
 
-// idle（静止）
+// device座標(=ワールド×RS)でプレイヤー周辺を切り出す
+const zoom=()=>{ const dx=Math.round((G.player.x-G.camX)*RS); return [Math.max(0,dx-160),600,360,360,3]; };
+// idle（静止・敵あり全景）
 clear(); G.start(); G.player.x=450; for(let i=0;i<40;i++)G.step(); G.draw();
-save(path.join(__dirname,'preview_play.png'));
-save(path.join(__dirname,'preview_idle_zoom.png'),[200,176,120,60,9]);
-// run（右）敵を除外してクリーンに
+save(path.join(__dirname,'preview_play.png'));                       // 1920x1080 全景
+save(path.join(__dirname,'preview_idle_zoom.png'), zoom());
+// run（右）敵除外でクリーンに
 clear(); G.start(); G.enemies.length=0; G.player.x=160; for(let i=0;i<30;i++){G.hold('arrowright');G.step();} G.draw();
-save(path.join(__dirname,'preview_run_zoom.png'),[Math.max(0,Math.round(G.player.x-G.camX)-50),176,120,60,9]);
+save(path.join(__dirname,'preview_run_zoom.png'), zoom());
 // run（左）
 clear(); G.start(); G.enemies.length=0; G.player.x=300; for(let i=0;i<30;i++){G.release('arrowright');G.hold('arrowleft');G.step();} G.draw();
-save(path.join(__dirname,'preview_left_zoom.png'),[Math.max(0,Math.round(G.player.x-G.camX)-50),176,120,60,9]);
-console.log('preview saved: preview_play / preview_idle_zoom / preview_run_zoom / preview_left_zoom');
+save(path.join(__dirname,'preview_left_zoom.png'), zoom());
+console.log('preview saved (1920x1080): preview_play / preview_idle_zoom / preview_run_zoom / preview_left_zoom');
