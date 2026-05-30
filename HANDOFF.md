@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-30 - [codex] Walker enemy painterly sprite generated
+- Generated with built-in `image_gen` using `ART_DESIGN.md` enemy/boss shared style rules and the walker brief; post-processed chroma-key source to a transparent RGBA PNG strip.
+- Saved `assets/enemy_walker.png` - 4 frames, 128x128 per frame, horizontal strip 512x128.
+- Verification: exact dimensions and alpha/corner transparency confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Next for Claude: wire walker walk animation when adding enemy sprite ASSETS. No code or hitboxes changed.
+
 ## 2026-05-30 - [codex] Met enemy painterly sprites generated
 - Generated with built-in `image_gen` using `ART_DESIGN.md` enemy/boss shared style rules and the met brief; post-processed chroma-key sources to transparent RGBA PNG strips.
 - Saved `assets/enemy_met_hide.png` - 1 frame, 128x128 per frame, horizontal strip 128x128.
