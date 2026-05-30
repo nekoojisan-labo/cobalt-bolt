@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] ground_top painterly neon terrain edge generated
+- Saved `assets/ground_top.png` - 256x64 RGBA transparent PNG; horizontally seamless metal top-edge strip with cyan neon rim and transparent lower area.
+- Verification: exact 256x64 dimensions, alpha channel present (`alpha min=0 max=255`), no visible magenta key residue (`keyish=0`), transparent lower band (`bottom_alpha_max=0` for y>=48), and pixel-perfect horizontal seam (`seam_delta_x=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and verify `assets/platform.png`.
+
 ## 2026-05-31 - [codex] ground_fill painterly seamless terrain tile generated
 - Saved `assets/ground_fill.png` - 256x256 opaque RGB PNG; hand-painted industrial wet metal/concrete ground body texture in the cobalt neon-night palette, tileable horizontally and vertically.
 - Verification: exact 256x256 dimensions, fully opaque (`alpha min=255 max=255`), pixel-perfect wrap seams (`seam_delta_x=0`, `seam_delta_y=0`), and 3x3 tiled preview spot-check confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
