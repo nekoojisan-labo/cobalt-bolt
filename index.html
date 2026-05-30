@@ -129,7 +129,7 @@ function loadAssets(){
   if(typeof Image==='undefined') return;   // ブラウザ/検証環境でImageがあるときのみ
   for(const k in ASSETS){ const a=ASSETS[k];
     for(const name in (a.anims||{})){ const an=a.anims[name]; if(!an.src) continue;
-      const im=new Image(); an.ready=false; im.onload=()=>{an.ready=true;}; im.onerror=()=>{an.ready=false;}; im.src=an.src; an.img=im;
+      const im=new Image(); an.ready=false; an.settled=false; im.onload=()=>{an.ready=true;an.settled=true;}; im.onerror=()=>{an.settled=true;}; im.src=an.src; an.img=im;
     }
   }
 }
@@ -159,9 +159,24 @@ const _imgreg={};
 function getImg(src){
   if(!src) return null;
   if(_imgreg[src]) return _imgreg[src];
-  const o={ready:false,img:null}; _imgreg[src]=o;
-  if(typeof Image!=='undefined'){ const im=new Image(); im.onload=()=>{o.ready=true;}; im.onerror=()=>{o.ready=false;}; im.src=src; o.img=im; }
+  const o={ready:false,settled:false,img:null}; _imgreg[src]=o;
+  if(typeof Image!=='undefined'){ const im=new Image(); im.onload=()=>{o.ready=true;o.settled=true;}; im.onerror=()=>{o.settled=true;}; im.src=src; o.img=im; }
   return o;
+}
+// ---- プリローダー（全アセット読込後にタイトル表示。最初のチラつき防止）----
+let _preloadList=null;
+function preloadAll(){
+  if(typeof Image==='undefined') return;
+  const list=[], add=o=>{ for(const k in o){ const c=o[k]; if(c&&c.src) list.push(c.src); } };
+  add(BULLET_SPR); add(ITEM_SPR); add(UI_SPR); add(FX_SPR); add(TERRAIN); add(BG);
+  for(const s of list) getImg(s);   // 読込開始
+  _preloadList=list;
+}
+function preloadProgress(){
+  let total=0, done=0;
+  for(const k in ASSETS){ const a=ASSETS[k]; for(const n in (a.anims||{})){ const an=a.anims[n]; if(!an.src)continue; total++; if(an.settled)done++; } }
+  if(_preloadList) for(const s of _preloadList){ total++; const r=_imgreg[s]; if(r&&r.settled)done++; }
+  return total? done/total : 1;
 }
 // 弾の中心(b.x+b.w/2, b.y+b.h/2)にスプライトを描く。vx<0で水平反転。
 function drawBulletSpr(cfg,b){
@@ -566,8 +581,8 @@ function drawHazards(){
 //======================================================================
 //  状態管理
 //======================================================================
-let state='title';   // title / play / dead / clear
-let clearT=0, shake=0;
+let state = HEADLESS ? 'title' : 'loading';   // loading / title / play / dead / clear
+let clearT=0, shake=0, loadingT=0;
 
 function startGame(){
   resetPlayer(); buildEnemies(); buildItems();
@@ -577,6 +592,7 @@ function startGame(){
 }
 
 function update(){
+  if(state==='loading'){ loadingT++; if(preloadProgress()>=1 || loadingT>420) state='title'; return; }  // 全アセット読込後にタイトルへ
   if(state==='title'){ if(PRESS[KENTER]) startGame(); return; }
   if(state==='dead'){ player.deadT++; if(PRESS[KENTER]) startGame(); return; }
   if(state==='clear'){ clearT++; if(PRESS[KENTER]) state='title'; return; }
@@ -884,6 +900,14 @@ function drawTitle(){
   text('← → 移動   Z ジャンプ   X ショット(長押しチャージ)',W/2,236,10,'#7a86b0');
 }
 function drawDead(){ if(!ctx)return; ctx.fillStyle='rgba(5,6,12,.78)'; ctx.fillRect(0,0,W,H); text('GAME OVER',W/2,120,38,'#ff3b3b'); text('PRESS ENTER TO RETRY',W/2,158,14,'#fff'); }
+function drawLoading(){
+  if(!ctx)return;
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#0a0e2c'); g.addColorStop(1,'#231a4a'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  text('COBALT',W/2,H/2-26,30,'#5ad1ff'); text('BOLT',W/2,H/2+2,30,'#ffd23f');
+  const p=preloadProgress(), bw=160, bx=(W-bw)/2, by=H/2+24;
+  px(bx-2,by-2,bw+4,10,'#0a0e1a'); px(bx,by,Math.max(2,Math.round(bw*p)),6,'#5ad1ff');
+  text('LOADING '+Math.round(p*100)+'%',W/2,by+26,11,'#aeb8ff');
+}
 function drawClear(){
   bg(); if(ctx){ctx.fillStyle='rgba(5,6,20,.5)';ctx.fillRect(0,0,W,H);}
   text('STAGE CLEAR!',W/2,110,36,'#0a0e1a'); if(ctx){ctx.fillStyle='#ffd23f';ctx.textAlign='center';ctx.fillText('STAGE CLEAR!',W/2-2,108);}
@@ -897,6 +921,7 @@ function render(){
   if(ctx.setTransform)ctx.setTransform(RS,0,0,RS,0,0);   // ワールド→1920x1080(4倍)基準変換
   ctx.save();
   if(shake>0)ctx.translate(rnd(-shake,shake)*0.4,rnd(-shake,shake)*0.4);
+  if(state==='loading'){ drawLoading(); ctx.restore(); return; }
   if(state==='title'){ drawTitle(); ctx.restore(); return; }
   if(state==='clear'){ drawClear(); ctx.restore(); return; }
   bg(); drawSolids(); drawHazards(); drawGate(); drawItems();
@@ -912,7 +937,7 @@ function render(){
 //======================================================================
 function frame(){ update(); render(); for(const k in PRESS)PRESS[k]=false; }
 function loop(){ frame(); requestAnimationFrame(loop); }
-loadAssets();
+loadAssets(); preloadAll();
 if(!HEADLESS && typeof requestAnimationFrame!=='undefined') loop();
 
 //======================================================================

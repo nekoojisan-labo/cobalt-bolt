@@ -35,6 +35,8 @@ console.log('player idle ready =', rd, ' run ready =', G.assets.player&&G.assets
 
 // device座標(=ワールド×RS)でプレイヤー周辺を切り出す
 const zoom=()=>{ const dx=Math.round((G.player.x-G.camX)*RS); return [Math.max(0,dx-160),600,360,360,3]; };
+// loading（起動時のローディング画面）
+clear(); G.state='loading'; G.draw(); save(path.join(__dirname,'preview_loading.png'));
 // idle（静止・敵あり全景）
 clear(); G.start(); G.player.x=450; for(let i=0;i<40;i++)G.step(); G.draw();
 save(path.join(__dirname,'preview_play.png'));                       // 1920x1080 全景

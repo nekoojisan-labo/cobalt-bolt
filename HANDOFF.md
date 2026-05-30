@@ -4,6 +4,11 @@
 
 ---
 
+## 2026-05-31 — [claude] ローディング画面でオープニングのチラつき解消
+- 症状: 起動直後にコード描画(旧ドット絵)が一瞬出て、画像が遅延ロードされ後から差し込まれる。
+- 対応: 状態 `loading` を追加し、**全アセット(ASSETS/BG/TERRAIN/UI/BULLET/ITEM/FX)を先読み完了後にタイトルへ遷移**。プログレスバー付きローディング画面 `drawLoading()`。`getImg`/`loadAssets`に`settled`、`preloadAll()`/`preloadProgress()`実装。最大7秒でタイムアウト。
+- HEADLESS時は`loading`をスキップ(初期`title`)＝harnessのT1維持。`harness`=27/27。preview_loadingで描画確認(textはエミュ非対応で非表示だがブラウザでは表示)。
+
 ## 2026-05-31 — [claude] 走り撃ちアニメ(runshoot)を反映＝フィードバック3点完了
 - `ASSETS.player.anims.runshoot`(8f/fps14)を紐付け。移動＋射撃中に腕を前に出して発射する走りモーション＋マズルフラッシュ＋弾が一致（preview_runshootで確認）。
 - これでユーザー指摘3点完了: ①走り撃ちの腕前出し ②HP減少緩和(maxhp24等) ③回復の敵ランダムドロップ。
