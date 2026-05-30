@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-30 - [codex] Met enemy painterly sprites generated
+- Generated with built-in `image_gen` using `ART_DESIGN.md` enemy/boss shared style rules and the met brief; post-processed chroma-key sources to transparent RGBA PNG strips.
+- Saved `assets/enemy_met_hide.png` - 1 frame, 128x128 per frame, horizontal strip 128x128.
+- Saved `assets/enemy_met_open.png` - 3 frames, 128x128 per frame, horizontal strip 384x128.
+- Verification: exact dimensions and alpha/corner transparency confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Next for Claude: wire met hide/open when adding enemy sprite ASSETS. No code or hitboxes changed.
+
 ## 2026-05-30 - [codex] Hero remaining painterly sprites generated
 - Generated with built-in `image_gen` using `ART_DESIGN.md` hero STYLE HEADER and existing `assets/player_idle.png` / `assets/player_run.png` as visual style references; post-processed chroma-key sources to transparent RGBA PNG strips.
 - Saved `assets/player_jump.png` - 2 frames, 256x256 per frame, horizontal strip 512x256.
