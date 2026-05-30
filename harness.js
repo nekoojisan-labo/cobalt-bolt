@@ -169,6 +169,19 @@ if(it){
   check('回復アイテムでHPが増える', G.player.hp>before && it.taken, `hp=${G.player.hp}/${before} taken=${it.taken}`);
 } else check('回復アイテムでHPが増える', false, 'items未公開');
 
+// ---- T17: 全足場がジャンプで到達可能（地形の到達性をBFSで検査）----
+{
+  const sol=G.solids.map(s=>({x1:s.x,x2:s.x+s.w,top:s.y,ground:s.h>=40}));
+  const RISE=68, DX=80;                              // ジャンプの上昇/横到達(余裕込み)
+  const gapX=(a,b)=> (a.x2>=b.x1 && b.x2>=a.x1) ? 0 : (a.x2<b.x1 ? b.x1-a.x2 : a.x1-b.x2);
+  const reach=new Set(), q=[];
+  sol.forEach((s,i)=>{ if(s.ground){reach.add(i);q.push(i);} });   // 地面から探索
+  while(q.length){ const a=sol[q.shift()];
+    sol.forEach((b,j)=>{ if(reach.has(j))return; if(gapX(a,b)<=DX && b.top>=a.top-RISE){ reach.add(j); q.push(j); } }); }
+  const un=sol.map((s,i)=>i).filter(i=>!reach.has(i));
+  check('全足場がジャンプで到達可能（地形）', un.length===0, '到達不能: '+un.map(i=>`x${sol[i].x1}/top${sol[i].top}`).join(' '));
+}
+
 // ==== 結果 ====
 console.log('\n==== ROCK BUSTER ヘッドレス検証 ====');
 console.log(results.join('\n'));

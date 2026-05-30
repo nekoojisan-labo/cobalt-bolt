@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 — [claude] FX反映で全要素2D化完成＋到達不能足場を修正
+- `FX_SPR` に muzzle(3f)/hit(4f)/explosion(8f)/dust(5f) を紐付け→ マズルフラッシュ・着弾火花・爆発・着地煙が塗り2Dに。preview_shootでマズル確認。
+- **到達不能エリア修正**: 高所足場 `S(2340,144)` が左右の足場から90px離れ、ジャンプ横到達(~76-82px)超で届かなかった→ `S(2300,158)` に調整（地面から到達可能）。砲台も2310へ。
+- **再発防止**: ハーネスにT17「全足場がジャンプで到達可能(BFS到達性検査 RISE68/DX80)」を追加。`harness`=**27/27**。
+- **完成**: 背景/地形/足場/主人公/敵/ボス/弾/HPバー/回復アイテム/FX = **全要素が高精細塗り2D**。当たり判定・物理は不変。
+
 ## 2026-05-31 — [codex] fx_dust painterly effect sheet generated
 - Saved `assets/fx_dust.png` — 5 frames, 128x128 per frame, horizontal strip 640x128; soft grey/white landing dust puff with pale white center and faint cyan rim light, hand-painted 2D, not pixel art.
 - Generated with built-in `image_gen` on a flat magenta chroma-key background, cropped/packed into equal 128px frames, then locally removed key color to RGBA transparency.

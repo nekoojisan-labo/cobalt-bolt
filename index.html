@@ -200,7 +200,7 @@ S(560,168,100,14);  S(420,124,80,14);                 // 導入＋高所
 S(840,176,90,14);   S(1040,150,90,14);
 S(1170,168,100,14); S(1450,150,90,14);  S(1620,182,90,14);
 S(1800,146,90,14);  S(1880,170,100,14);               // 高所＋穴上
-S(2160,176,90,14);  S(2340,144,90,14);                // 高所(アイテム/砲台)
+S(2160,176,90,14);  S(2300,158,90,14);                // 高所(砲台)※到達可能に調整
 S(2520,168,100,14); S(2780,150,90,14);  S(2960,182,90,14);
 S(3140,150,90,14);  S(3260,170,100,14);
 S(3480,176,90,14);  S(3600,150,90,14);
@@ -309,10 +309,10 @@ function boom(x,y,col){ for(let i=0;i<10;i++){const a=i/10*Math.PI*2;fx.push({x,
 function updateFx(){ for(const p of fx){p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life--;} for(let i=fx.length-1;i>=0;i--)if(fx[i].life<=0)fx.splice(i,1); }
 // ---- 画像エフェクト（assets配置で有効・無ければ上のパーティクルのみ）----
 const FX_SPR = {
-  // muzzle   :{src:'assets/fx_muzzle.png',    frames:3, fps:30, size:34},
-  // hit      :{src:'assets/fx_hit.png',       frames:4, fps:28, size:30},
-  // explosion:{src:'assets/fx_explosion.png', frames:8, fps:20, size:64},
-  // dust     :{src:'assets/fx_dust.png',      frames:5, fps:22, size:36},
+  muzzle   :{src:'assets/fx_muzzle.png',    frames:3, fps:30, size:36},
+  hit      :{src:'assets/fx_hit.png',       frames:4, fps:28, size:30},
+  explosion:{src:'assets/fx_explosion.png', frames:8, fps:22, size:64},
+  dust     :{src:'assets/fx_dust.png',      frames:5, fps:22, size:38},
 };
 let effects=[];
 function spawnFx(type,x,y,dir){ if(FX_SPR[type]) effects.push({type,x,y,t:0,dir:dir||1}); }
@@ -354,7 +354,7 @@ function buildEnemies(){
     mkE('flyer',1380,150,{w:24,h:22,hp:1}),
     mkE('walker',1450,150-28,{w:22,h:28,hp:2,dir:1}),   // 足場上(ハザード横)
     G('met',   1700,{hp:2}),
-    mkE('turret',2340,144-28,{w:24,h:28,hp:3}),         // 高所砲台
+    mkE('turret',2310,158-28,{w:24,h:28,hp:3}),         // 高所砲台(足場2300に乗る)
     G('walker',2200,{hp:2,dir:-1}),
     mkE('flyer',2420,160,{w:24,h:22,hp:1}),
     G('met',   2720,{hp:2}),
