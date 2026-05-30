@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-31 — [codex] fx_hit painterly effect sheet generated
+- Saved `assets/fx_hit.png` — 4 frames, 96x96 per frame, horizontal strip 384x96; cyan/white impact hit-spark burst, hand-painted 2D with bright additive-style core/glow, not pixel art.
+- Generated with built-in `image_gen` on a flat magenta chroma-key background, cropped/packed into equal frames, then locally removed key color to RGBA transparency.
+- Verification: exact 384x96 dimensions, RGBA alpha present (`alpha min=0 max=255`), transparent corner pixels, and no visible magenta key residue (`keyish=0`) confirmed after removing 3 matte residue pixels. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered and `tools/shot_play.png` spot-checked.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and verify `assets/fx_explosion.png`.
+
 ## 2026-05-31 — [codex] fx_muzzle painterly effect sheet generated
 - Saved `assets/fx_muzzle.png` — 3 frames, 128x128 per frame, horizontal strip 384x128; cyan/white buster muzzle flash facing right, hand-painted 2D with bright additive-style core/glow, not pixel art.
 - Generated with built-in `image_gen` on a flat magenta chroma-key background, then locally removed key color to RGBA transparency and resized/packed to the requested strip.
