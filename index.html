@@ -92,9 +92,9 @@ function sfx(type){
 
 // ---------- BGM（オープニング/通常/ボスで自動切替・ループ） ----------
 const BGM = {
-  title : 'assets/bgm_interceptor.mp3',   // オープニング
-  normal: 'assets/bgm_interceptor.mp3',   // 通常エリア
-  boss  : 'assets/bgm_interceptor.mp3',   // ボス
+  title : 'assets/bgm_asteroid.mp3',      // オープニング = Asteroid Belt
+  normal: 'assets/bgm_interceptor.mp3',   // 通常エリア   = Interceptor Fleet
+  boss  : 'assets/bgm_mastercore.mp3',    // ボス         = Master Core Awakening
 };
 let _bgmEls={}, _bgmCur=null, _bgmReady=false;
 function getBgm(src){
