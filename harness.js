@@ -133,7 +133,7 @@ check('600フレーム無例外で動作', crashed === null, crashed ? String(cr
 // ---- T14: スタート→ボスまで自走で踏破できる（穴を越えられる）----
 G.start(); G.releaseAll();
 let reached=false, fell=false, maxX=0;
-for(let i=0;i<2500 && !reached; i++){
+for(let i=0;i<3800 && !reached; i++){
   G.player.hp = 9999;                       // 戦闘死を除外し「地形の踏破可能性」だけを検証
   G.release('arrowright'); G.hold('arrowright');
   const pl=G.player, probeX=pl.x+pl.w+22, footY=pl.y+pl.h;
@@ -147,6 +147,27 @@ for(let i=0;i<2500 && !reached; i++){
   if(G.bossActive || G.player.x>=G.consts.BOSS_TRIGGER) reached=true;
 }
 check('スタート→ボスまで自走で踏破できる（穴を越えられる）', reached && !fell, `reached=${reached} fell=${fell} 到達x=${maxX.toFixed(0)}/${G.consts.BOSS_TRIGGER}`);
+
+// ---- T15: 地上敵を「同じ高さ」の通常弾で撃てる（当たり判定＝見た目の修正）----
+G.start(); G.releaseAll(); for(let i=0;i<8;i++)G.step();
+const gm=G.enemies.find(e=>e.type==='met');
+if(gm){
+  gm.phase='open';                                   // 隠れ無敵を解除
+  G.player.y=G.consts.GROUND_Y-G.consts.PH; G.player.x=gm.x-40; G.player.dir=1;
+  const ghp=gm.hp;
+  G.hold('x'); G.step(); G.release('x');
+  for(let i=0;i<14;i++){ gm.phase='open'; G.step(); }
+  check('地上敵を同じ高さの弾で撃てる(当たり判定修正)', (!gm.alive)||(gm.hp<ghp), `alive=${gm.alive} hp=${gm.hp}/${ghp}`);
+} else check('地上敵を同じ高さの弾で撃てる(当たり判定修正)', false, 'met無し');
+
+// ---- T16: 回復アイテムでHP回復 ----
+G.start(); G.releaseAll(); for(let i=0;i<5;i++)G.step();
+const it=G.items && G.items[0];
+if(it){
+  G.player.hp=4; G.player.x=it.x; G.player.y=G.consts.GROUND_Y-G.consts.PH;
+  const before=G.player.hp; G.step();
+  check('回復アイテムでHPが増える', G.player.hp>before && it.taken, `hp=${G.player.hp}/${before} taken=${it.taken}`);
+} else check('回復アイテムでHPが増える', false, 'items未公開');
 
 // ==== 結果 ====
 console.log('\n==== ROCK BUSTER ヘッドレス検証 ====');

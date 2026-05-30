@@ -180,31 +180,37 @@ function drawBulletSpr(cfg,b){
 //  STAGE
 //======================================================================
 const GROUND_Y=216;
-const LEVEL_W=2800;
-const ROOM_X=2320;          // ボス部屋の左端（カメラ固定位置）
-const BOSS_TRIGGER=2380;    // ここを越えるとボス出現
+const LEVEL_W=4200;
+const ROOM_X=3720;          // ボス部屋の左端（カメラ固定位置）
+const BOSS_TRIGGER=3780;    // ここを越えるとボス出現
 let camX=0;
 
 const solids=[];
 const S=(x,y,w,h)=>solids.push({x,y,w,h});
-// 地面（穴2つ）
-S(0,    GROUND_Y, 560, 54);            // 穴: 560-630
-S(630,  GROUND_Y, 570, 54);            // 穴: 1200-1270
-S(1270, GROUND_Y, LEVEL_W-1270, 54);
-// 足場
-S(250,160,80,14);
-S(380,120,70,14);
-S(560,166,80,14);   // 穴1の上の足場
-S(760,150,80,14);
-S(940,176,90,14);
-S(1120,150,80,14);  // 穴2の上の足場
-S(1340,180,90,14);
-S(1540,148,90,14);
-S(1740,184,90,14);
-S(1940,150,90,14);
-S(2120,180,80,14);
-// 段差
-S(2240,184,70,32);
+const GY=GROUND_Y;
+// --- 地面（穴5つ・各70px＝ジャンプ可）---
+S(0,    GY, 620, 54);          // 穴 620-690
+S(690,  GY, 540, 54);          // 穴 1230-1300
+S(1300, GY, 640, 54);          // 穴 1940-2010
+S(2010, GY, 560, 54);          // 穴 2570-2640
+S(2640, GY, 620, 54);          // 穴 3260-3330
+S(3330, GY, LEVEL_W-3330, 54); // ボス部屋まで連続
+// --- 足場（穴の上＋高所ルート：変化を出す）---
+S(560,168,100,14);  S(420,124,80,14);                 // 導入＋高所
+S(840,176,90,14);   S(1040,150,90,14);
+S(1170,168,100,14); S(1450,150,90,14);  S(1620,182,90,14);
+S(1800,146,90,14);  S(1880,170,100,14);               // 高所＋穴上
+S(2160,176,90,14);  S(2340,144,90,14);                // 高所(アイテム/砲台)
+S(2520,168,100,14); S(2780,150,90,14);  S(2960,182,90,14);
+S(3140,150,90,14);  S(3260,170,100,14);
+S(3480,176,90,14);  S(3600,150,90,14);
+// --- 段差（階段）---
+S(3000,200,60,16); S(3060,184,60,32);
+// --- ハザード（接触で小ダメージ・足場や穴で回避）---
+const hazards=[
+  {x:1490,y:GY-6,w:120,h:6},   // スパイク帯1（上の足場1450で回避）
+  {x:2870,y:GY-6,w:130,h:6},   // スパイク帯2
+];
 
 //======================================================================
 //  弾
@@ -306,18 +312,26 @@ const mkE=(type,x,y,o={})=>Object.assign({type,x,y,w:20,h:18,hp:2,alive:true,t:0
   dir:-1,hit:0,onGround:false,phase:'hide',timer:0,baseY:y,deathT:0},o);
 
 function buildEnemies(){
+  // 当たり判定は見た目(塗り2D)に合わせて高めに＝同じ高さの弾が当たる。地上敵は h28 で底辺を地面に。
+  const G=(type,x,o={})=>mkE(type,x,GROUND_Y-28,Object.assign({w:type==='turret'?24:22,h:28},o));
   enemies=[
-    mkE('met',   360, GROUND_Y-18,{hp:2}),
-    mkE('walker',520, GROUND_Y-22,{w:22,h:22,hp:2,dir:-1}),
-    mkE('flyer', 720, 110,        {w:20,h:16,hp:1}),
-    mkE('met',   940, 176-18,     {hp:2}),
-    mkE('turret',1160,GROUND_Y-26,{w:24,h:26,hp:3}),
-    mkE('walker',1340,180-22,     {w:22,h:22,hp:2,dir:1}),
-    mkE('flyer', 1560,100,        {w:20,h:16,hp:1}),
-    mkE('met',   1740,184-18,     {hp:2}),
-    mkE('walker',1900,GROUND_Y-22,{w:22,h:22,hp:2,dir:-1}),
-    mkE('turret',2120,180-26,     {w:24,h:26,hp:3}),
-    mkE('flyer', 2200,90,         {w:20,h:16,hp:1}),
+    G('met',   380,{hp:2}),
+    G('walker',560,{hp:2,dir:-1}),
+    mkE('flyer', 760,160,{w:24,h:22,hp:1}),
+    mkE('met',   840,176-28,{w:22,h:28,hp:2}),          // 足場上
+    G('walker',1000,{hp:2,dir:1}),
+    G('turret',1110,{hp:3}),
+    mkE('flyer',1380,150,{w:24,h:22,hp:1}),
+    mkE('walker',1450,150-28,{w:22,h:28,hp:2,dir:1}),   // 足場上(ハザード横)
+    G('met',   1700,{hp:2}),
+    mkE('turret',2340,144-28,{w:24,h:28,hp:3}),         // 高所砲台
+    G('walker',2200,{hp:2,dir:-1}),
+    mkE('flyer',2420,160,{w:24,h:22,hp:1}),
+    G('met',   2720,{hp:2}),
+    G('walker',2960,{hp:2,dir:1}),
+    mkE('flyer',3100,155,{w:24,h:22,hp:1}),
+    G('met',   3450,{hp:2}),
+    G('turret',3560,{hp:3}),
   ];
 }
 
@@ -465,13 +479,61 @@ function updateBullets(){
 }
 
 //======================================================================
+//  回復アイテム
+//======================================================================
+let items=[];
+const ITEM_SPR={  // assets配置で画像化。無ければ図形フォールバック。
+  // heal_s:{src:'assets/item_heal_s.png', size:20},
+  // heal_l:{src:'assets/item_heal_l.png', size:26},
+};
+const ITEM_HEAL={ heal_s:6, heal_l:16 };
+function buildItems(){
+  items=[
+    {type:'heal_s', x:1486, y:GROUND_Y-22, w:16, h:16, taken:false, t:0},
+    {type:'heal_l', x:2600, y:GROUND_Y-24, w:18, h:18, taken:false, t:0},
+    {type:'heal_s', x:3560, y:GROUND_Y-22, w:16, h:16, taken:false, t:0},
+  ];
+}
+function updateItems(){
+  for(const it of items){
+    if(it.taken) continue; it.t++;
+    if(!player.dead && player.hp>0 && aabb(player,it)){
+      it.taken=true;
+      player.hp=Math.min(player.maxhp, player.hp+(ITEM_HEAL[it.type]||0));
+      sfx('charge'); boom(it.x+it.w/2, it.y+it.h/2, '#7fff9f');
+    }
+  }
+}
+function drawItems(){
+  for(const it of items){
+    if(it.taken) continue;
+    const bob=Math.sin(it.t*0.1)*2, x=it.x-camX, y=it.y+bob, big=it.type==='heal_l';
+    const cfg=ITEM_SPR[it.type];
+    if(cfg && cfg.src){ const r=getImg(cfg.src); if(r&&r.ready&&r.img){ const s=cfg.size||20;
+      ctx&&ctx.drawImage(r.img,0,0,r.img.width,r.img.height, Math.round(it.x-camX+it.w/2-s/2), Math.round(it.y+it.h/2-s/2+bob), s,s); continue; } }
+    // フォールバック図形（回復カプセル＋十字）
+    px(x,y,it.w,it.h, big?'#0e3a1c':'#123a20');
+    px(x+1,y+1,it.w-2,it.h-2, big?'#3ad06a':'#7fff9f');
+    px(x+(it.w>>1)-1,y+3,2,it.h-6,'#ffffff'); px(x+3,y+(it.h>>1)-1,it.w-6,2,'#ffffff');
+  }
+}
+function drawHazards(){
+  for(const hz of hazards){
+    if(hz.x+hz.w<camX||hz.x>camX+W) continue;
+    const x=hz.x-camX;
+    px(x,hz.y,hz.w,hz.h,'#3a0a12');
+    for(let i=0;i<hz.w;i+=6){ px(x+i,hz.y-5,5,5,'#c2304a'); px(x+i+1,hz.y-5,3,3,'#ff5a78'); } // 棘
+  }
+}
+
+//======================================================================
 //  状態管理
 //======================================================================
 let state='title';   // title / play / dead / clear
 let clearT=0, shake=0;
 
 function startGame(){
-  resetPlayer(); buildEnemies();
+  resetPlayer(); buildEnemies(); buildItems();
   pBullets.length=0; eBullets.length=0; fx.length=0;
   boss=null; bossActive=false; gate=false; warnT=0;
   camX=0; clearT=0; state='play';
@@ -484,6 +546,8 @@ function update(){
 
   updatePlayer();
   updateEnemies();
+  updateItems();
+  for(const hz of hazards){ if(!player.dead && aabb(player,hz)) hurt(3,false); }  // スパイク帯
 
   if(!bossActive && player.x>BOSS_TRIGGER) spawnBoss();
   if(bossActive){
@@ -746,7 +810,7 @@ function render(){
   if(shake>0)ctx.translate(rnd(-shake,shake)*0.4,rnd(-shake,shake)*0.4);
   if(state==='title'){ drawTitle(); ctx.restore(); return; }
   if(state==='clear'){ drawClear(); ctx.restore(); return; }
-  bg(); drawSolids(); drawGate();
+  bg(); drawSolids(); drawHazards(); drawGate(); drawItems();
   for(const e of enemies) drawEnemy(e);
   drawBoss(); drawBullets(); drawPlayer(); drawFx(); drawHUD();
   if(warnT>0 && boss) text('WARNING!',W/2,60,22,(Math.floor(warnT/6)%2?'#ff3b3b':'#fff'));
@@ -770,7 +834,7 @@ if(typeof globalThis!=='undefined'){
     get state(){return state}, get player(){return player}, get enemies(){return enemies},
     get boss(){return boss}, get bossActive(){return bossActive},
     get pBullets(){return pBullets}, get eBullets(){return eBullets},
-    get camX(){return camX}, get solids(){return solids},
+    get camX(){return camX}, get solids(){return solids}, get items(){return items}, get hazards(){return hazards},
     consts:{W,H,GROUND_Y,LEVEL_W,ROOM_X,BOSS_TRIGGER,PW,PH},
     start:startGame,
     draw(){ render(); },                                          // 現在状態を描画（スクショ検証用）
