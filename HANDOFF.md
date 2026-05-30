@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] platform painterly floating terrain asset generated
+- Saved `assets/platform.png` - 256x64 RGBA transparent PNG; stretch-friendly floating steel platform module with cyan neon top edge, underside vents, and transparent surround.
+- Verification: exact 256x64 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, and no visible magenta key residue (`keyish=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: all requested item, HP frame, and terrain assets are generated and committed. Claude can wire the existing image hooks when ready.
+
 ## 2026-05-31 - [codex] ground_top painterly neon terrain edge generated
 - Saved `assets/ground_top.png` - 256x64 RGBA transparent PNG; horizontally seamless metal top-edge strip with cyan neon rim and transparent lower area.
 - Verification: exact 256x64 dimensions, alpha channel present (`alpha min=0 max=255`), no visible magenta key residue (`keyish=0`), transparent lower band (`bottom_alpha_max=0` for y>=48), and pixel-perfect horizontal seam (`seam_delta_x=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
