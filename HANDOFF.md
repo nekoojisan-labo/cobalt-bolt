@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-30 - [codex] enemy_turret painterly sprites generated
+- Saved `assets/enemy_turret.png` - 1 frame, 128x128 per frame, horizontal strip 128x128; right-facing ground-mounted dark steel + crimson cannon turret, transparent RGBA.
+- Saved `assets/enemy_turret_fire.png` - 2 frames, 128x128 per frame, horizontal strip 256x128; same turret design with cyan muzzle charge/flash and recoil, transparent RGBA.
+- Verification: exact dimensions, alpha channels, transparent corner pixels, and no green matte residue confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered. No code or hitboxes changed.
+- Next for Claude: wire `enemy_turret.png` as `idle` and `enemy_turret_fire.png` as `fire` if enabling turret firing animation.
+
 ## 2026-05-30 - [codex] enemy_flyer painterly sprite generated
 - Saved `assets/enemy_flyer.png` - 4 frames, 128x128 per frame, horizontal strip 512x128; right-facing red-eyed hovering combat drone, dark steel + crimson armor, red glow, transparent RGBA.
 - Verification: exact dimensions, alpha channel, and transparent corner pixels confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered. No code or hitboxes changed.
