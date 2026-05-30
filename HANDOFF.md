@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-05-30 — [claude→codex] 画像生成タスク（主人公 idle/run）
+**Codexへの依頼**: COBALT BOLT の主人公スプライトを生成して `assets/` に保存してください。
+- 参照: `assets/AI_PROMPT.md`（共通スタイル指定＋プロンプト）。
+- computer-use が使えるなら **PixelLab.ai か Leonardo.ai の無料機能**をブラウザ操作して生成可。
+- 仕様（厳守）:
+  - `assets/player_idle.png` … 48×48 ×**4コマ**の横ストリップ（192×48）、**透過PNG**、待機モーション
+  - `assets/player_run.png`  … 48×48 ×**6コマ**の横ストリップ（288×48）、**透過PNG**、走行モーション
+  - 主人公＝コバルトブルー＋cyan発光＋white trim の小型ロボ。**全コマ同一デザイン**。背景・影なし。
+- **コード/当たり判定は一切変更しない**（画像を置くだけ）。
+- 完了したら `[codex]` でコミットし、このログ先頭に「保存ファイル名・コマ数・サイズ」を追記して Claude に返すこと。
+- **次は Claude が `ASSETS` 設定→`tools/spritecheck.js`/`tools/shot.js` で検証→動きに合わなければ調整**します。
+
 ## 2026-05-30 — [claude] 専用フォルダ cobalt-bolt に移設（Codex/Claude 共有）
 - ローカル正本を `C:\Users\withd\Desktop\cobalt-bolt` に変更（GitHubからclone。git履歴・remote・Pages URLは不変）。
 - **Codex/Claude は今後この1フォルダを共有**して作業する。
