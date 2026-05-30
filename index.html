@@ -218,6 +218,7 @@ const hazards=[
 const pBullets=[], eBullets=[];
 function shootP(x,y,dir,charge){
   pBullets.push({x,y,w:charge?13:8,h:charge?13:5,vx:dir*(charge?6.5:8),dmg:charge?3:1,charge,life:90});
+  spawnFx('muzzle', x+dir*4, y+(charge?6:2), dir);
   sfx(charge?'charge':'shoot');
 }
 function shootE(x,y,vx,vy,c='#ff5a4a'){ eBullets.push({x,y,w:7,h:7,vx,vy,c,life:300}); }
@@ -262,11 +263,14 @@ function updatePlayer(){
   if(PRESS[KJUMP])player.jumpBuf=6; else if(player.jumpBuf>0)player.jumpBuf--;
   if(player.jumpBuf>0 && player.coyote>0){
     player.vy=JUMP; player.jumpBuf=0; player.coyote=0; player.onGround=false; sfx('shoot');
+    spawnFx('dust', player.x+player.w/2, player.y+player.h);
   }
   if(!keys[KJUMP] && player.vy<-3) player.vy=-3; // 可変ジャンプ
   player.vy=clamp(player.vy+GRAV,-20,TERM);
   collideX(player);
   collideY(player);
+  if(!player.wasGround && player.onGround) spawnFx('dust', player.x+player.w/2, player.y+player.h); // 着地煙
+  player.wasGround=player.onGround;
   if(player.onGround && mv!==0) player.anim+=0.22; else player.anim=0;
 
   // ショット
@@ -303,6 +307,32 @@ function hurt(dmg,fall){
 const fx=[];
 function boom(x,y,col){ for(let i=0;i<10;i++){const a=i/10*Math.PI*2;fx.push({x,y,vx:Math.cos(a)*rnd(1,3),vy:Math.sin(a)*rnd(1,3),life:rnd(14,26),col});} }
 function updateFx(){ for(const p of fx){p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life--;} for(let i=fx.length-1;i>=0;i--)if(fx[i].life<=0)fx.splice(i,1); }
+// ---- 画像エフェクト（assets配置で有効・無ければ上のパーティクルのみ）----
+const FX_SPR = {
+  // muzzle   :{src:'assets/fx_muzzle.png',    frames:3, fps:30, size:34},
+  // hit      :{src:'assets/fx_hit.png',       frames:4, fps:28, size:30},
+  // explosion:{src:'assets/fx_explosion.png', frames:8, fps:20, size:64},
+  // dust     :{src:'assets/fx_dust.png',      frames:5, fps:22, size:36},
+};
+let effects=[];
+function spawnFx(type,x,y,dir){ if(FX_SPR[type]) effects.push({type,x,y,t:0,dir:dir||1}); }
+function updateEffects(){
+  for(const e of effects)e.t++;
+  for(let i=effects.length-1;i>=0;i--){ const c=FX_SPR[effects[i].type];
+    const dur=c?(c.frames/(c.fps||20))*60:18; if(effects[i].t>=dur) effects.splice(i,1); }
+}
+function drawEffects(){
+  if(!ctx)return;
+  for(const e of effects){ const c=FX_SPR[e.type]; if(!c||!c.src)continue; const r=getImg(c.src); if(!r||!r.ready||!r.img)continue;
+    const n=c.frames||1, fw=r.img.width/n, ih=r.img.height, s=c.size||32;
+    let f=Math.floor(e.t*(c.fps||20)/60); f=Math.min(f,n-1);
+    const y=Math.round(e.y-s/2);
+    ctx.save();
+    if(e.dir<0){ ctx.translate(Math.round(e.x-camX)+s/2,0); ctx.scale(-1,1); ctx.drawImage(r.img, f*fw,0,fw,ih, 0,y, s,s); }
+    else ctx.drawImage(r.img, f*fw,0,fw,ih, Math.round(e.x-camX-s/2),y, s,s);
+    ctx.restore();
+  }
+}
 
 //======================================================================
 //  敵
@@ -409,7 +439,7 @@ function updateBoss(){
   if(warnT>0)warnT--;
   boss.timer++; if(boss.hit>0)boss.hit--;
   eGravity(boss);
-  if(boss.dead){boss.deadT++; if(boss.deadT%6===0)boom(boss.x+rnd(0,boss.w),boss.y+rnd(0,boss.h),'#ff7a00'); return;}
+  if(boss.dead){boss.deadT++; if(boss.deadT%10===0){boom(boss.x+rnd(0,boss.w),boss.y+rnd(0,boss.h),'#ff7a00'); spawnFx('explosion', boss.x+rnd(4,boss.w-4), boss.y+rnd(4,boss.h-4));} return;}
   if(boss.state==='intro'){ if(boss.timer>90){boss.state='think';boss.timer=0;} return; }
 
   boss.dir = player.x < boss.x ? -1 : 1;
@@ -454,8 +484,8 @@ function updateBullets(){
         const guarded = (e.type==='met' && e.phase==='hide'); // メットは隠れてると無敵
         if(guarded){ if(!b.charge){b.life=0;} boom(b.x,b.y,'#ffd23f'); }
         else{
-          e.hp-=b.dmg; e.hit=6;
-          if(e.hp<=0){ e.alive=false; e.deathT=0; boom(e.x+e.w/2,e.y+e.h/2,'#ff9a3c'); sfx('boom'); }
+          e.hp-=b.dmg; e.hit=6; spawnFx('hit', b.x, b.y+b.h/2);
+          if(e.hp<=0){ e.alive=false; e.deathT=0; boom(e.x+e.w/2,e.y+e.h/2,'#ff9a3c'); spawnFx('explosion', e.x+e.w/2, e.y+e.h/2); sfx('boom'); }
           else sfx('hit');
           if(!b.charge){ b.life=0; }
         }
@@ -464,7 +494,7 @@ function updateBullets(){
     }
     if(b.life<=0) continue;
     if(boss && !boss.dead && boss.state!=='intro' && aabb(b,boss)){
-      boss.hp-=b.dmg; boss.hit=6; sfx('hit');
+      boss.hp-=b.dmg; boss.hit=6; spawnFx('hit', b.x, b.y+b.h/2); sfx('hit');
       if(!b.charge) b.life=0;
       if(boss.hp<=0){ boss.hp=0; boss.dead=true; boss.deadT=0; sfx('boom'); }
     }
@@ -534,7 +564,7 @@ let clearT=0, shake=0;
 
 function startGame(){
   resetPlayer(); buildEnemies(); buildItems();
-  pBullets.length=0; eBullets.length=0; fx.length=0;
+  pBullets.length=0; eBullets.length=0; fx.length=0; effects.length=0;
   boss=null; bossActive=false; gate=false; warnT=0;
   camX=0; clearT=0; state='play';
 }
@@ -558,6 +588,7 @@ function update(){
 
   updateBullets();
   updateFx();
+  updateEffects();
 
   // カメラ
   let tgt = bossActive ? ROOM_X : clamp(player.x-W/2+player.w/2, 0, LEVEL_W-W);
@@ -863,7 +894,7 @@ function render(){
   if(state==='clear'){ drawClear(); ctx.restore(); return; }
   bg(); drawSolids(); drawHazards(); drawGate(); drawItems();
   for(const e of enemies) drawEnemy(e);
-  drawBoss(); drawBullets(); drawPlayer(); drawFx(); drawHUD();
+  drawBoss(); drawBullets(); drawPlayer(); drawFx(); drawEffects(); drawHUD();
   if(warnT>0 && boss) text('WARNING!',W/2,60,22,(Math.floor(warnT/6)%2?'#ff3b3b':'#fff'));
   if(state==='dead') drawDead();
   ctx.restore();
