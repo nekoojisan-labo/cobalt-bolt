@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] item_heal_s painterly recovery asset generated
+- Saved `assets/item_heal_s.png` - 64x64 RGBA transparent PNG; small forward-facing green/cyan glowing recovery orb/capsule with a white plus sign, hand-painted 2D style, no pixel art.
+- Verification: exact 64x64 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, and no visible magenta key residue (`keyish=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and verify `assets/item_heal_l.png`.
+
 ## 2026-05-30 — [claude] ゲーム中身の大改修: ステージ拡張/当たり判定修正/回復アイテム/ハザード
 - **当たり判定の不具合修正**: 塗り2D砲口に弾を上げた結果、背の低い地上敵の上を弾が通過していた。→ 地上敵(met/walker/turret)の当たり判定を**見た目に合わせて高く(h28・top188)**＝同じ高さの弾が当たる。テストT15で固定。
 - **ステージ拡張**: LEVEL_W 2800→**4200**。穴5つ(各70px)・高所ルート・段差・**ハザード(スパイク帯2)**で単調さ解消。敵17体を高さ変化＋ヒット可能位置に配置。ROOM_X/BOSS_TRIGGER更新。
