@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-30 - [codex] High-fidelity 2D player idle/run assets generated
+- Used real image generation: Codex built-in `image_gen` with the `ART_DESIGN.md` section 1 STYLE HEADER plus the `player_idle` / `player_run` English prompts, generated on chroma-key green and locally converted to alpha PNGs.
+- Saved `assets/player_idle.png` - 5 frames, 256x256 per frame, horizontal strip 1280x256, RGBA transparent PNG.
+- Saved `assets/player_run.png` - 8 frames, 256x256 per frame, horizontal strip 2048x256, RGBA transparent PNG.
+- Verification: exact dimensions and alpha confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Note for Claude: code/hitboxes were not modified per request, so `index.html` still contains the old player sprite metadata (`fw:48`, idle 4f, run 6f) until a later wiring pass.
+
 ## 2026-05-30 — [claude] ★アート方針転換: 高精細2D(塗り/フルHD)＋設計書ART_DESIGN.md作成
 - ユーザー判断: **現状の画質は低すぎ→ドット絵をやめ高精細イラスト2Dへ転換**、解像度フルHD(1920×1080)。素材は別途ちゃんと作る。
 - 作成: **`ART_DESIGN.md`**（5章942行のアートバイブル: 主人公/敵ボス/環境/弾FX UI/技術。各アセットにサイズ・コマ・fps・ファイル名・視覚ブリーフ・英語painterlyプロンプト・STYLE HEADER）。
