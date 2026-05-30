@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] ground_fill painterly seamless terrain tile generated
+- Saved `assets/ground_fill.png` - 256x256 opaque RGB PNG; hand-painted industrial wet metal/concrete ground body texture in the cobalt neon-night palette, tileable horizontally and vertically.
+- Verification: exact 256x256 dimensions, fully opaque (`alpha min=255 max=255`), pixel-perfect wrap seams (`seam_delta_x=0`, `seam_delta_y=0`), and 3x3 tiled preview spot-check confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and verify `assets/ground_top.png`.
+
 ## 2026-05-31 - [codex] ui_hp_boss painterly boss HP frame generated
 - Saved `assets/ui_hp_boss.png` - 360x60 RGBA transparent PNG; horizontal crimson/red sci-fi boss HP bar frame with an intentionally empty inner channel for code-drawn fill.
 - Verification: exact 360x60 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, no visible magenta key residue (`keyish=0`), and inner fill channel fully transparent (`channel=(45,16,270,28)`, `channel_alpha_max=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
