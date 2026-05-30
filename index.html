@@ -134,6 +134,34 @@ function drawSheet(key, anim, time, footX, footY, dir){
   return true;
 }
 
+// ---- 弾・汎用画像（assets配置で有効・無ければ図形描画にフォールバック）----
+const BULLET_SPR = {
+  // buster:{src:'assets/bullet_buster.png', size:14, frames:1, fps:1},
+  // charge:{src:'assets/bullet_charge.png', size:26, frames:2, fps:14},
+  // enemy :{src:'assets/bullet_enemy.png',  size:12, frames:1, fps:1},
+};
+const _imgreg={};
+function getImg(src){
+  if(!src) return null;
+  if(_imgreg[src]) return _imgreg[src];
+  const o={ready:false,img:null}; _imgreg[src]=o;
+  if(typeof Image!=='undefined'){ const im=new Image(); im.onload=()=>{o.ready=true;}; im.onerror=()=>{o.ready=false;}; im.src=src; o.img=im; }
+  return o;
+}
+// 弾の中心(b.x+b.w/2, b.y+b.h/2)にスプライトを描く。vx<0で水平反転。
+function drawBulletSpr(cfg,b){
+  if(!cfg||!cfg.src||!ctx) return false;
+  const r=getImg(cfg.src); if(!r||!r.ready||!r.img) return false;
+  const s=cfg.size||14, n=cfg.frames||1, iw=r.img.width, ih=r.img.height, fw=iw/n;
+  const f=cfg.fps?Math.floor((b.life||0)*cfg.fps/60)%n:0;   // life基準でアニメ
+  const cx=Math.round(b.x-camX+b.w/2), cy=Math.round(b.y+b.h/2);
+  ctx.save();
+  if(b.vx<0){ ctx.translate(cx+ s/2,0); ctx.scale(-1,1); ctx.drawImage(r.img, f*fw,0,fw,ih, 0,cy-s/2, s,s); }
+  else ctx.drawImage(r.img, f*fw,0,fw,ih, cx-s/2,cy-s/2, s,s);
+  ctx.restore();
+  return true;
+}
+
 //======================================================================
 //  STAGE
 //======================================================================
@@ -226,11 +254,11 @@ function updatePlayer(){
   const sh=!!keys[KSHOOT];
   if(sh)player.charge=Math.min(player.charge+1,60);
   if(PRESS[KSHOOT] && player.shootCD<=0){           // 押した瞬間に通常弾
-    shootP(player.x+(player.dir>0?player.w:-8), player.y+8, player.dir, false);
+    shootP(player.x+(player.dir>0?20:-12), player.y-3, player.dir, false);   // 塗り2D砲口に合わせた発射位置
     player.shootCD=11;
   }
   if(player.wasShoot && !sh){                        // 離した瞬間：チャージ判定
-    if(player.charge>=40) shootP(player.x+(player.dir>0?player.w:-12), player.y+5, player.dir, true);
+    if(player.charge>=40) shootP(player.x+(player.dir>0?16:-16), player.y-7, player.dir, true);
     player.charge=0;
   }
   player.wasShoot=sh;
@@ -506,11 +534,12 @@ function drawPlayer(){
   if(player.inv>0 && Math.floor(player.blink/3)%2===0 && !player.dead) return;
   if(player.dead){ return; }
   // 高精細スプライトがあれば優先（無ければ下のコード描画にフォールバック）
+  // 移動中は必ず run（チャージ/射撃ポーズで固まらないように）
   const _anim = player.inv>44 ? 'hurt'
     : !player.onGround ? 'jump'
+    : Math.abs(player.vx)>0.1 ? 'run'
     : player.shootCD>5 ? 'shoot'
     : player.charge>0 ? 'charge'
-    : Math.abs(player.vx)>0.1 ? 'run'
     : 'idle';
   if(drawSheet('player', _anim, player.blink, player.x-camX+player.w/2, player.y+player.h, player.dir)) return;
   const x=Math.round(player.x-camX), y=Math.round(player.y), d=player.dir;
@@ -622,11 +651,15 @@ function drawBoss(){
 
 function drawBullets(){
   for(const b of pBullets){
+    if(drawBulletSpr(b.charge?BULLET_SPR.charge:BULLET_SPR.buster, b)) continue;
     const x=b.x-camX;
     if(b.charge){ px(x,b.y,b.w,b.h,'#bff0ff'); px(x+2,b.y+2,b.w-4,b.h-4,'#5ad1ff'); px(x+4,b.y+4,b.w-8,b.h-8,'#fff'); }
     else{ px(x,b.y,b.w,b.h,'#aef0ff'); px(x+1,b.y+1,b.w-2,b.h-2,'#7fd8ff'); }
   }
-  for(const b of eBullets){ px(b.x-camX,b.y,b.w,b.h,b.c); px(b.x-camX+1,b.y+1,b.w-2,b.h-2,'#fff'); }
+  for(const b of eBullets){
+    if(drawBulletSpr(BULLET_SPR.enemy, b)) continue;
+    px(b.x-camX,b.y,b.w,b.h,b.c); px(b.x-camX+1,b.y+1,b.w-2,b.h-2,'#fff');
+  }
 }
 function drawFx(){ for(const p of fx){ px(p.x-camX,p.y,3,3,p.life>8?'#fff':p.col); } }
 

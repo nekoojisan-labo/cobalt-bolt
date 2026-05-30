@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-05-30 — [claude] フィードバック修正: アニメ優先度／弾の発射位置／弾の画像フック
+- ユーザー指摘の修正:
+  1. **チャージしたまま移動でチャージポーズ固着** → `drawPlayer`のanim選択で移動中は必ずrun優先に修正。
+  2. **弾の発射位置が砲口とズレ（約11px下）** → `shootP`の発射座標を塗り2D砲口に合わせて調整（通常 x+20/y-3、チャージ x+16/y-7）。preview_shootで一致確認。
+  3. **弾を画像化する土台** → `BULLET_SPR`＋`getImg`＋`drawBulletSpr` を追加。`drawBullets`で画像優先・無ければ図形フォールバック。
+- `harness`=24/24維持。
+- **要・生成（次バッチ）**: [codex] `bullet_buster`/`bullet_charge`/`bullet_enemy`（透過・設計書§4準拠）＋ flyer/turret/boss。生成後Claudeが `BULLET_SPR`/`ASSETS` に紐付け。
+- **残り**: 背景3層/地形/FX（Claudeが画像描画フック追加→Codex生成）。画風統一の最終段階。
+
 ## 2026-05-30 — [claude] 塗り2D反映: 主人公残り＋met＋walker（Codexバッチは途中でAPIエラー停止）
 - Codexのキャラバッチは **image_gen の "Bad Request"（APIエラー, 403kトークン）で flyer手前で停止**。だが per-entity コミットで以下は生成済み:
   - 主人公: jump(2f)/shoot(2f)/charge(4f)/hurt(2f) 256px ／ met: hide(1f)/open(3f) 128px ／ walker: walk(4f) 128px。**いずれも本物の塗り2D・画風一致を目視確認**。

@@ -45,4 +45,8 @@ save(path.join(__dirname,'preview_run_zoom.png'), zoom());
 // run（左）
 clear(); G.start(); G.enemies.length=0; G.player.x=300; for(let i=0;i<30;i++){G.release('arrowright');G.hold('arrowleft');G.step();} G.draw();
 save(path.join(__dirname,'preview_left_zoom.png'), zoom());
-console.log('preview saved (1920x1080): preview_play / preview_idle_zoom / preview_run_zoom / preview_left_zoom');
+// shoot（弾と砲口の位置合わせ確認）
+clear(); G.start(); G.enemies.length=0; G.releaseAll(); for(let i=0;i<8;i++)G.step(); G.player.x=280; G.player.dir=1;
+G.hold('x'); G.step(); G.draw(); G.release('x');   // 発射直後（弾が砲口直近）
+{ const dx=Math.round((G.player.x-G.camX)*RS); save(path.join(__dirname,'preview_shoot_zoom.png'),[Math.max(0,dx-120),520,640,460,2]); }
+console.log('preview saved (1920x1080): play/idle/run/left/shoot');
