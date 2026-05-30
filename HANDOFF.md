@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-30 - [codex] bg_near painterly parallax layer generated
+- Saved `assets/bg_near.png` - 1920x1080 RGBA PNG; high-fidelity hand-painted 2D near foreground rooftop/duct/sign layer with cyan and magenta neon rim lighting.
+- Verification: exact 1920x1080 dimensions, real alpha transparency (`alpha min=0 max=255`, top 120px fully transparent), no visible green-key pixels detected, and pixel-perfect horizontal seam (`left/right edge max delta = 0`) confirmed. `node harness.js` = 24/24; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: all three requested parallax background layers are generated and committed.
+
 ## 2026-05-30 - [codex] bg_mid painterly parallax layer generated
 - Saved `assets/bg_mid.png` - 1920x1080 RGBA PNG; high-fidelity hand-painted 2D mid-distance industrial building layer with cyan/magenta neon and warm/cool window lights.
 - Verification: exact 1920x1080 dimensions, real alpha transparency (`alpha min=0 max=255`, top 120px fully transparent), no visible green-key pixels detected, and pixel-perfect horizontal seam (`left/right edge max delta = 0`) confirmed. `node harness.js` = 24/24; `node tools/shot.js` rendered.
