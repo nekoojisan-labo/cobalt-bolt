@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-05-31 — [claude] 地形/HPバー/回復アイテムの塗り2Dを反映（ほぼ全要素2D化）
+- `TERRAIN` に ground_fill/ground_top(h18)/platform を紐付け→ 地面テクスチャ＋ネオン縁＋足場モジュールが solids に重なる（当たり判定不変）。
+- `UI_SPR` に ui_hp/ui_hp_boss を紐付け（Codex報告の内側透過チャンネル座標から fill 矩形を算出）→ 自機(シアン)/ボス(赤)のHPバー枠＋fill表示。
+- `ITEM_SPR` に heal_s(22)/heal_l(30) を紐付け。
+- 検証: preview(HD)で 背景+地形+足場+キャラ+HPバー が全て塗り2Dで合成、ボスHPバーも確認。`harness`=26/26維持。
+- **達成**: 背景/地形/キャラ/弾/HPバー/アイテム = ほぼ全要素が高精細塗り2D。
+- **残り**: FX(muzzle/hit/explosion/dust 等)＝現状コードのパーティクル。→ [claude]がFX画像フック実装→[codex]§4で生成→反映で完全体。
+
 ## 2026-05-31 - [codex] platform painterly floating terrain asset generated
 - Saved `assets/platform.png` - 256x64 RGBA transparent PNG; stretch-friendly floating steel platform module with cyan neon top edge, underside vents, and transparent surround.
 - Verification: exact 256x64 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, and no visible magenta key residue (`keyish=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.

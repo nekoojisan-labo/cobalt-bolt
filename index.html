@@ -483,8 +483,8 @@ function updateBullets(){
 //======================================================================
 let items=[];
 const ITEM_SPR={  // assets配置で画像化。無ければ図形フォールバック。
-  // heal_s:{src:'assets/item_heal_s.png', size:20},
-  // heal_l:{src:'assets/item_heal_l.png', size:26},
+  heal_s:{src:'assets/item_heal_s.png', size:22},
+  heal_l:{src:'assets/item_heal_l.png', size:30},
 };
 const ITEM_HEAL={ heal_s:6, heal_l:16 };
 function buildItems(){
@@ -631,9 +631,9 @@ function tile(x,y,w,h){
 }
 // 地形アート（solidsに重ねる・当たり判定は不変・無ければtile()）
 const TERRAIN = {
-  // groundFill:{src:'assets/ground_fill.png'},      // シームレス地面本体(横タイル)
-  // groundTop :{src:'assets/ground_top.png', h:14}, // 地面の上縁(世界px高・横タイル)
-  // platform  :{src:'assets/platform.png'},         // 足場モジュール(横ストレッチ)
+  groundFill:{src:'assets/ground_fill.png'},      // シームレス地面本体(横タイル)
+  groundTop :{src:'assets/ground_top.png', h:18}, // 地面の上縁(世界px高・横タイル)
+  platform  :{src:'assets/platform.png'},         // 足場モジュール(横ストレッチ)
 };
 function _tileX(r, dx, dy, dw, dh){
   const iw=r.img.width, ih=r.img.height, sc=dh/ih, uw=Math.max(1,iw*sc);
@@ -797,8 +797,9 @@ function drawFx(){ for(const p of fx){ px(p.x-camX,p.y,3,3,p.life>8?'#fff':p.col
 
 // HPバー画像（枠＋内側fill。無ければ下のコードゲージ）。fill領域は素材に合わせ調整。
 const UI_SPR = {
-  // hp  :{src:'assets/ui_hp.png',      x:10,    y:8, w:104, h:20, fill:{x:8,y:6,w:88,h:8}},
-  // boss:{src:'assets/ui_hp_boss.png', x:W-114, y:8, w:104, h:18, fill:{x:8,y:5,w:88,h:8}, rtl:true},
+  // 表示90px = 素材360pxを0.25倍。内側透過チャンネルもその比で算出。
+  hp  :{src:'assets/ui_hp.png',      x:10,    y:8, w:90, h:18, fill:{x:10,y:6,w:69,h:7}},
+  boss:{src:'assets/ui_hp_boss.png', x:W-100, y:8, w:90, h:15, fill:{x:11,y:4,w:67,h:7}, rtl:true},
 };
 function hpBarImg(cfg, frac){
   const r=getImg(cfg.src); if(!r||!r.ready||!r.img||!ctx) return false;
