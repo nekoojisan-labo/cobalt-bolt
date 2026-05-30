@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-05-30 - [codex] Hero remaining painterly sprites generated
+- Generated with built-in `image_gen` using `ART_DESIGN.md` hero STYLE HEADER and existing `assets/player_idle.png` / `assets/player_run.png` as visual style references; post-processed chroma-key sources to transparent RGBA PNG strips.
+- Saved `assets/player_jump.png` - 2 frames, 256x256 per frame, horizontal strip 512x256.
+- Saved `assets/player_shoot.png` - 2 frames, 256x256 per frame, horizontal strip 512x256.
+- Saved `assets/player_charge.png` - 4 frames, 256x256 per frame, horizontal strip 1024x256.
+- Saved `assets/player_hurt.png` - 2 frames, 256x256 per frame, horizontal strip 512x256.
+- Verification: exact dimensions and alpha/corner transparency confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Next for Claude: wire these assets into `ASSETS.player` when ready. No code or hitboxes changed.
+
 ## 2026-05-30 — [claude] エンジン1920×1080化＋塗り2D主人公を反映（HD化成功）
 - Codexの塗り2D素材(player_idle 5f/1280×256, player_run 8f/2048×256)は**本物の高精細2D**を確認（金属艶・発光・マント・設計書準拠）。
 - **エンジンHD改修**: 内部1920×1080化（RS=4／render冒頭で`setTransform(RS,...)`／`imageSmoothingEnabled=true`／CSS`image-rendering:auto`／fitをスムーズ拡縮）。ワールド座標(480×270)・物理・当たり判定は**不変**。
