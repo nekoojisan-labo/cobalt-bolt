@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-30 - [codex] bg_far painterly parallax layer generated
+- Saved `assets/bg_far.png` - 1920x1080 opaque RGB PNG; high-fidelity hand-painted 2D moonlit neon-night far background with sky gradient, moon, and distant industrial skyline.
+- Verification: exact 1920x1080 dimensions, opaque/no-alpha RGB output, and pixel-perfect horizontal seam (`left/right edge max delta = 0`) confirmed. `node harness.js` = 24/24; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and validate `assets/bg_mid.png` with transparent sky area.
+
 ## 2026-05-30 — [claude] 塗り2D反映: flyer/turret/ボス＋弾3種（前景キャラ完全2D化）
 - 反映: `ASSETS` に flyer(fly4f,scale0.2)/turret(idle+fire,scale0.26)/boss(idle/jump/shoot/dash/death,scale0.13) 追加。`BULLET_SPR`に buster/charge/enemy。
 - ディスパッチ調整: drawEnemyのturret→timer<16でfire、drawBossをstate別(idle/jump/shoot/dash)＋dead時death表示に。
