@@ -136,9 +136,9 @@ function drawSheet(key, anim, time, footX, footY, dir){
 
 // ---- 弾・汎用画像（assets配置で有効・無ければ図形描画にフォールバック）----
 const BULLET_SPR = {
-  // buster:{src:'assets/bullet_buster.png', size:14, frames:1, fps:1},
-  // charge:{src:'assets/bullet_charge.png', size:26, frames:2, fps:14},
-  // enemy :{src:'assets/bullet_enemy.png',  size:12, frames:1, fps:1},
+  buster:{src:'assets/bullet_buster.png', size:18, frames:2, fps:16},
+  charge:{src:'assets/bullet_charge.png', size:30, frames:2, fps:12},
+  enemy :{src:'assets/bullet_enemy.png',  size:15, frames:2, fps:14},
 };
 const _imgreg={};
 function getImg(src){

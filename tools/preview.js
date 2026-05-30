@@ -49,4 +49,8 @@ save(path.join(__dirname,'preview_left_zoom.png'), zoom());
 clear(); G.start(); G.enemies.length=0; G.releaseAll(); for(let i=0;i<8;i++)G.step(); G.player.x=280; G.player.dir=1;
 G.hold('x'); G.step(); G.draw(); G.release('x');   // 発射直後（弾が砲口直近）
 { const dx=Math.round((G.player.x-G.camX)*RS); save(path.join(__dirname,'preview_shoot_zoom.png'),[Math.max(0,dx-120),520,640,460,2]); }
-console.log('preview saved (1920x1080): play/idle/run/left/shoot');
+// charge shot（チャージ弾の見た目）
+clear(); G.start(); G.enemies.length=0; G.releaseAll(); for(let i=0;i<8;i++)G.step(); G.player.x=240; G.player.dir=1;
+for(let i=0;i<50;i++){G.hold('x');G.step();} G.release('x'); G.step(); G.step(); G.draw();
+{ const dx=Math.round((G.player.x-G.camX)*RS); save(path.join(__dirname,'preview_charge_zoom.png'),[Math.max(0,dx-120),460,820,560,2]); }
+console.log('preview saved (1920x1080): play/idle/run/left/shoot/charge');
