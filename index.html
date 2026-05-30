@@ -51,6 +51,7 @@ if(!HEADLESS && typeof window!=='undefined'){
     if(['arrowleft','arrowright','arrowup','arrowdown',' '].includes(k))e.preventDefault();
     if(!keys[k])PRESS[k]=true;
     keys[k]=true;
+    if(!_bgmReady){ _bgmReady=true; primeBgm(); }   // 初回キーで音声アンロック
   });
   addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 }
@@ -63,10 +64,17 @@ const rnd  =(a,b)=>a+Math.random()*(b-a);
 function aabb(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 function px(x,y,w,h,c){ if(!ctx)return; ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),w,h); }
 
-// ---------- 簡易SE（WebAudio・任意） ----------
+// ---------- 効果音（assets配置で音声ファイル優先・無ければWebAudioシンセ） ----------
+const SFX_SRC = {  // 例) shoot:'assets/sfx_shoot.mp3', hit:'assets/sfx_hit.mp3', ...（配置で有効）
+};
+const _sfxEls={};
 let actx=null;
 function sfx(type){
   if(HEADLESS) return;
+  const src=SFX_SRC[type];
+  if(src && typeof Audio!=='undefined'){
+    try{ if(!_sfxEls[src]){const a=new Audio(src);a.volume=0.55;_sfxEls[src]=a;} const c=_sfxEls[src].cloneNode(); c.volume=0.55; c.play().catch(()=>{}); return; }catch(e){}
+  }
   try{
     if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
     const o=actx.createOscillator(), g=actx.createGain();
@@ -80,6 +88,32 @@ function sfx(type){
     g.gain.exponentialRampToValueAtTime(.0001,t+.3);
     o.start(t); o.stop(t+.32);
   }catch(e){}
+}
+
+// ---------- BGM（オープニング/通常/ボスで自動切替・ループ） ----------
+const BGM = {
+  title : 'assets/bgm_interceptor.mp3',   // オープニング
+  normal: 'assets/bgm_interceptor.mp3',   // 通常エリア
+  boss  : 'assets/bgm_interceptor.mp3',   // ボス
+};
+let _bgmEls={}, _bgmCur=null, _bgmReady=false;
+function getBgm(src){
+  if(!src||HEADLESS||typeof Audio==='undefined') return null;
+  if(_bgmEls[src]) return _bgmEls[src];
+  const a=new Audio(src); a.loop=true; a.volume=0.42; a.preload='auto'; _bgmEls[src]=a; return a;
+}
+function primeBgm(){ const seen={}; for(const k in BGM){ const s=BGM[k]; if(!s||seen[s])continue; seen[s]=1; const a=getBgm(s); if(a){ a.play().then(()=>a.pause()).catch(()=>{}); } } }
+function playBgm(src){
+  if(!src){ if(_bgmCur){const o=_bgmEls[_bgmCur];if(o)o.pause();} _bgmCur=null; return; }
+  if(_bgmCur===src){ const a=_bgmEls[src]; if(a&&a.paused)a.play().catch(()=>{}); return; }
+  if(_bgmCur){ const o=_bgmEls[_bgmCur]; if(o)o.pause(); }
+  _bgmCur=src; const a=getBgm(src); if(a){ try{a.currentTime=0;}catch(e){} a.play().catch(()=>{}); }
+}
+function manageBgm(){            // 毎フレーム呼ぶ（状態に応じてBGM切替）
+  if(!_bgmReady) return;
+  if(state==='title')      playBgm(BGM.title);
+  else if(state==='play')  playBgm((bossActive && BGM.boss) ? BGM.boss : BGM.normal);
+  else                     playBgm(null);   // loading/dead/clear は停止
 }
 
 //======================================================================
@@ -592,6 +626,7 @@ function startGame(){
 }
 
 function update(){
+  manageBgm();   // 状態に応じてBGM切替（毎フレーム）
   if(state==='loading'){ loadingT++; if(preloadProgress()>=1 || loadingT>420) state='title'; return; }  // 全アセット読込後にタイトルへ
   if(state==='title'){ if(PRESS[KENTER]) startGame(); return; }
   if(state==='dead'){ player.deadT++; if(PRESS[KENTER]) startGame(); return; }
