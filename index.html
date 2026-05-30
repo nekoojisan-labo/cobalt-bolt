@@ -82,6 +82,41 @@ function sfx(type){
 }
 
 //======================================================================
+//  高精細スプライト・エンジン（任意）
+//  assets/ にPNGスプライトシートを置き、下のASSETSを設定すると有効化。
+//  画像が無い／未ロードのときは自動で従来のコード描画にフォールバックする。
+//======================================================================
+const ASSETS = {
+  // 例) player:{ src:'assets/player.png', fw:48, fh:48, scale:1, ax:0.5, ay:1,
+  //        anims:{ idle:{row:0,frames:4,fps:6}, run:{row:1,frames:6,fps:12},
+  //                jump:{row:2,frames:1,fps:1}, shoot:{row:3,frames:2,fps:12} } }
+  // ↑ 素材配置後にここを各シートのコマ割りに合わせて記述する
+};
+const IMG = {};
+function loadAssets(){
+  if(HEADLESS || typeof Image==='undefined') return;
+  for(const k in ASSETS){
+    const a=ASSETS[k], im=new Image();
+    a.ready=false; im.onload=()=>{a.ready=true;}; im.onerror=()=>{a.ready=false;}; im.src=a.src; IMG[k]=im;
+  }
+}
+// シートから1コマを描く。footX/footYは足元(底辺中央)のスクリーン座標。dir<0で左右反転。
+function drawSheet(key, anim, time, footX, footY, dir){
+  const a=ASSETS[key]; if(!a || !a.ready || !ctx) return false;
+  const an=a.anims[anim] || a.anims.idle; if(!an) return false;
+  const n=an.frames||1, base=an.from||0;
+  const f=base + (an.fps ? Math.floor(time*an.fps/60)%n : 0);
+  const fw=a.fw, fh=a.fh, sc=a.scale||1, w=fw*sc, h=fh*sc;
+  const sxp=f*fw, syp=(an.row||0)*fh;
+  const dx=Math.round(footX - w*(a.ax!=null?a.ax:0.5)), dy=Math.round(footY - h*(a.ay!=null?a.ay:1));
+  ctx.save();
+  if(dir<0){ ctx.translate(dx+w,0); ctx.scale(-1,1); ctx.drawImage(IMG[key], sxp,syp,fw,fh, 0,dy, w,h); }
+  else ctx.drawImage(IMG[key], sxp,syp,fw,fh, dx,dy, w,h);
+  ctx.restore();
+  return true;
+}
+
+//======================================================================
 //  STAGE
 //======================================================================
 const GROUND_Y=216;
@@ -452,6 +487,9 @@ function drawSolids(){ for(const s of solids){ if(s.x+s.w<camX||s.x>camX+W)conti
 function drawPlayer(){
   if(player.inv>0 && Math.floor(player.blink/3)%2===0 && !player.dead) return;
   if(player.dead){ return; }
+  // 高精細スプライトがあれば優先（無ければ下のコード描画にフォールバック）
+  const _anim = !player.onGround ? 'jump' : (Math.abs(player.vx)>0.1 ? 'run' : (player.charge>0?'shoot':'idle'));
+  if(drawSheet('player', _anim, player.blink, player.x-camX+player.w/2, player.y+player.h, player.dir)) return;
   const x=Math.round(player.x-camX), y=Math.round(player.y), d=player.dir;
   ctx.save();
   if(d<0){ctx.translate(x+player.w,y);ctx.scale(-1,1);} else ctx.translate(x,y);
@@ -502,6 +540,8 @@ function drawEnemy(e){
   const x=Math.round(e.x-camX), y=Math.round(e.y);
   const f=e.hit>0 && Math.floor(e.hit/2)%2===0;
   if(!e.alive){ const t=e.deathT,r=t*2.2; for(let i=0;i<6;i++){const a=i*Math.PI/3+t*0.3; px(x+10+Math.cos(a)*r,y+9+Math.sin(a)*r,3,3,t<6?'#fff':'#ffd23f');} return; }
+  // 高精細スプライト優先（種別ごとにassets設定があれば）
+  if(drawSheet(e.type, e.type==='flyer'?'fly':(e.type==='met'&&e.phase==='hide'?'hide':'idle'), e.t, e.x-camX+e.w/2, e.y+e.h, (e.dir||(sign(player.x-e.x)||1)))) return;
   const O='#1a0a22', Ob='#06121f';
   if(e.type==='met'){
     px(x,y+5,20,13,O); px(x+4,y+1,12,5,O);                       // アウトライン
@@ -534,6 +574,9 @@ function drawBoss(){
   const x=Math.round(boss.x-camX), y=Math.round(boss.y), d=boss.dir;
   const f=boss.hit>0 && Math.floor(boss.hit/2)%2===0;
   if(boss.dead){ return; }
+  // 高精細スプライト優先
+  const _bs = boss.state==='shoot'?'shoot' : boss.state==='dash'?'run' : boss.state==='jump'?'jump' : 'idle';
+  if(drawSheet('boss', _bs, boss.timer, boss.x-camX+boss.w/2, boss.y+boss.h, boss.dir)) return;
   ctx.save();
   if(d<0){ctx.translate(x+boss.w,y);ctx.scale(-1,1);} else ctx.translate(x,y);
   const C=f?'#fff':'#d63a2a', C2=f?'#fff':'#a01f12', HL=f?'#fff':'#ff7a5a', O='#2a0603';
@@ -618,6 +661,7 @@ function render(){
 //======================================================================
 function frame(){ update(); render(); for(const k in PRESS)PRESS[k]=false; }
 function loop(){ frame(); requestAnimationFrame(loop); }
+loadAssets();
 if(!HEADLESS && typeof requestAnimationFrame!=='undefined') loop();
 
 //======================================================================
