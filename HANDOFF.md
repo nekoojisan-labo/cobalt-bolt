@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] item_heal_l painterly recovery asset generated
+- Saved `assets/item_heal_l.png` - 96x96 RGBA transparent PNG; large forward-facing gold/green glowing recovery orb with a white plus sign, hand-painted 2D style, no pixel art.
+- Verification: exact 96x96 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, and no visible magenta key residue (`keyish=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and verify `assets/ui_hp.png`.
+
 ## 2026-05-31 - [codex] item_heal_s painterly recovery asset generated
 - Saved `assets/item_heal_s.png` - 64x64 RGBA transparent PNG; small forward-facing green/cyan glowing recovery orb/capsule with a white plus sign, hand-painted 2D style, no pixel art.
 - Verification: exact 64x64 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, and no visible magenta key residue (`keyish=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
