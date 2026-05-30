@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-31 — [codex] player_runshoot painterly hero sprite generated
+- Saved `assets/player_runshoot.png` — 8 frames, 256x256 per frame, horizontal strip 2048x256; same cobalt-blue robot design as `player_run.png` / `player_shoot.png`, running while the right-arm buster cannon is extended forward, with small cyan muzzle flashes on frames 2 and 6.
+- Generated with built-in `image_gen` using the existing run/shoot sprites as visual references, on a flat magenta chroma-key background; locally removed key to RGBA transparency and repacked/cropped to match the run sprite scale and lower foot baseline.
+- Verification: exact 2048x256 dimensions, RGBA alpha present (`alpha min=0 max=255`), transparent corner pixels, no visible magenta key residue (`keyish=0`), and visual spot-check complete. `node harness.js` = 27/27; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered and `tools/shot_play.png` / `tools/shot_zoom_chars.png` spot-checked.
+- Scope: image asset + handoff only; no code or hitboxes changed per request.
+- Next: Claude can add `ASSETS.player.anims.runshoot` wiring when code edits are allowed.
+
 ## 2026-05-31 — [claude] バランス調整(HP/被ダメ)＋回復ドロップ式＋走り撃ちフック
 - **HPの減りが速い→調整**: 最大HP 16→24、接触ダメ3→2・ハザード3→2、無敵60→72。回復量 小+8/大+24(全回復)。
 - **回復は敵ランダムドロップに**: 固定配置を撤廃。敵撃破時に**24%でドロップ(小80%/大20%)**＋簡易重力で着地。穴に落ちたら消滅。
