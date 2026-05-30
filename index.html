@@ -90,12 +90,25 @@ function sfx(type){
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 const ASSETS = {
-  // 高精細2D(塗り)・256pxフレーム。scale/ayは見た目に合わせて調整。
+  // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
   player:{ fw:256, fh:256, scale:0.16, ax:0.5, ay:0.98, anims:{
-    idle:{src:'assets/player_idle.png', frames:5, fps:6},
-    run :{src:'assets/player_run.png',  frames:8, fps:14},
-    // jump/shoot/charge/hurt は未生成のため idle で代用（drawSheetが自動フォールバック）
+    idle  :{src:'assets/player_idle.png',  frames:5, fps:6},
+    run   :{src:'assets/player_run.png',   frames:8, fps:14},
+    jump  :{src:'assets/player_jump.png',  frames:2, fps:6},
+    shoot :{src:'assets/player_shoot.png', frames:2, fps:14},
+    charge:{src:'assets/player_charge.png',frames:4, fps:12},
+    hurt  :{src:'assets/player_hurt.png',  frames:2, fps:10},
   }},
+  met:{ fw:128, fh:128, scale:0.22, ax:0.5, ay:1, anims:{
+    hide:{src:'assets/enemy_met_hide.png', frames:1, fps:1},
+    open:{src:'assets/enemy_met_open.png', frames:3, fps:8},
+    idle:{src:'assets/enemy_met_hide.png', frames:1, fps:1},
+  }},
+  walker:{ fw:128, fh:128, scale:0.22, ax:0.5, ay:1, anims:{
+    walk:{src:'assets/enemy_walker.png', frames:4, fps:8},
+    idle:{src:'assets/enemy_walker.png', frames:4, fps:8},
+  }},
+  // flyer/turret/boss は未生成 → コード描画のまま
 };
 function loadAssets(){
   if(typeof Image==='undefined') return;   // ブラウザ/検証環境でImageがあるときのみ
@@ -493,7 +506,12 @@ function drawPlayer(){
   if(player.inv>0 && Math.floor(player.blink/3)%2===0 && !player.dead) return;
   if(player.dead){ return; }
   // 高精細スプライトがあれば優先（無ければ下のコード描画にフォールバック）
-  const _anim = !player.onGround ? 'jump' : (Math.abs(player.vx)>0.1 ? 'run' : (player.charge>0?'shoot':'idle'));
+  const _anim = player.inv>44 ? 'hurt'
+    : !player.onGround ? 'jump'
+    : player.shootCD>5 ? 'shoot'
+    : player.charge>0 ? 'charge'
+    : Math.abs(player.vx)>0.1 ? 'run'
+    : 'idle';
   if(drawSheet('player', _anim, player.blink, player.x-camX+player.w/2, player.y+player.h, player.dir)) return;
   const x=Math.round(player.x-camX), y=Math.round(player.y), d=player.dir;
   ctx.save();
@@ -546,7 +564,8 @@ function drawEnemy(e){
   const f=e.hit>0 && Math.floor(e.hit/2)%2===0;
   if(!e.alive){ const t=e.deathT,r=t*2.2; for(let i=0;i<6;i++){const a=i*Math.PI/3+t*0.3; px(x+10+Math.cos(a)*r,y+9+Math.sin(a)*r,3,3,t<6?'#fff':'#ffd23f');} return; }
   // 高精細スプライト優先（種別ごとにassets設定があれば）
-  if(drawSheet(e.type, e.type==='flyer'?'fly':(e.type==='met'&&e.phase==='hide'?'hide':'idle'), e.t, e.x-camX+e.w/2, e.y+e.h, (e.dir||(sign(player.x-e.x)||1)))) return;
+  const _en = e.type==='flyer'?'fly' : e.type==='met'?(e.phase==='open'?'open':'hide') : e.type==='walker'?'walk' : 'idle';
+  if(drawSheet(e.type, _en, e.t, e.x-camX+e.w/2, e.y+e.h, (e.dir||(sign(player.x-e.x)||1)))) return;
   const O='#1a0a22', Ob='#06121f';
   if(e.type==='met'){
     px(x,y+5,20,13,O); px(x+4,y+1,12,5,O);                       // アウトライン

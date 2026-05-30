@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-05-30 — [claude] 塗り2D反映: 主人公残り＋met＋walker（Codexバッチは途中でAPIエラー停止）
+- Codexのキャラバッチは **image_gen の "Bad Request"（APIエラー, 403kトークン）で flyer手前で停止**。だが per-entity コミットで以下は生成済み:
+  - 主人公: jump(2f)/shoot(2f)/charge(4f)/hurt(2f) 256px ／ met: hide(1f)/open(3f) 128px ／ walker: walk(4f) 128px。**いずれも本物の塗り2D・画風一致を目視確認**。
+- 反映: `ASSETS` に上記を追加（met/walker scale0.22 ay1）。`drawEnemy`のanim選択を met→hide/open・walker→walk に修正。`drawPlayer`のanim選択を hurt/jump/shoot/charge/run/idle に拡張。
+- 検証: preview(HD)で hero+met+walker が塗り2D・接地◎・画風統一を確認。`harness`=24/24維持。
+- **未生成（次バッチ）**: flyer / turret / boss（キャラ系）。その後 背景3層 / 地形 / 弾 / FX（←Claudeが画像描画フック追加してから）。
+- **次タスク**: [codex] flyer/turret/boss を再生成（前回はAPI一時エラー＝再実行で続行可）。[claude] 残り反映＋背景/地形/弾の描画フック実装。
+
 ## 2026-05-30 - [codex] Walker enemy painterly sprite generated
 - Generated with built-in `image_gen` using `ART_DESIGN.md` enemy/boss shared style rules and the walker brief; post-processed chroma-key source to a transparent RGBA PNG strip.
 - Saved `assets/enemy_walker.png` - 4 frames, 128x128 per frame, horizontal strip 512x128.
