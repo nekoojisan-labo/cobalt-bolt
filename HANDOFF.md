@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-31 — [codex] fx_muzzle painterly effect sheet generated
+- Saved `assets/fx_muzzle.png` — 3 frames, 128x128 per frame, horizontal strip 384x128; cyan/white buster muzzle flash facing right, hand-painted 2D with bright additive-style core/glow, not pixel art.
+- Generated with built-in `image_gen` on a flat magenta chroma-key background, then locally removed key color to RGBA transparency and resized/packed to the requested strip.
+- Verification: exact 384x128 dimensions, RGBA alpha present (`alpha min=0 max=255`), transparent corner pixels, and no visible magenta key residue (`keyish=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered and `tools/shot_play.png` spot-checked.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and verify `assets/fx_hit.png`.
+
 ## 2026-05-31 — [claude] 地形/HPバー/回復アイテムの塗り2Dを反映（ほぼ全要素2D化）
 - `TERRAIN` に ground_fill/ground_top(h18)/platform を紐付け→ 地面テクスチャ＋ネオン縁＋足場モジュールが solids に重なる（当たり判定不変）。
 - `UI_SPR` に ui_hp/ui_hp_boss を紐付け（Codex報告の内側透過チャンネル座標から fill 矩形を算出）→ 自機(シアン)/ボス(赤)のHPバー枠＋fill表示。
