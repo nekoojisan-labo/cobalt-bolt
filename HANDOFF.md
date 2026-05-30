@@ -4,6 +4,11 @@
 
 ---
 
+## 2026-05-30 — [codex] bullet_enemy projectile sprite generated
+- Saved `assets/bullet_enemy.png` — 2 frames, 80x80 per frame, horizontal strip 160x80; high-fidelity hand-painted red/orange hostile energy bolt, right-facing, transparent RGBA.
+- Verification: exact dimensions, alpha/corner transparency, and no green key residue confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered. No code or hitboxes changed.
+- Next for Claude: use the existing enemy-bullet image hook only if needed; asset is ready.
+
 ## 2026-05-30 — [codex] bullet_charge projectile sprite generated
 - Saved `assets/bullet_charge.png` — 2 frames, 192x192 per frame, horizontal strip 384x192; high-fidelity hand-painted cyan charged orb with sparks/arcs, right-facing, transparent RGBA.
 - Verification: exact dimensions, alpha/corner transparency, and no visible chroma-key residue confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered. No code or hitboxes changed.
