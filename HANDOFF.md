@@ -4,6 +4,11 @@
 
 ---
 
+## 2026-05-30 - [codex] enemy_flyer painterly sprite generated
+- Saved `assets/enemy_flyer.png` - 4 frames, 128x128 per frame, horizontal strip 512x128; right-facing red-eyed hovering combat drone, dark steel + crimson armor, red glow, transparent RGBA.
+- Verification: exact dimensions, alpha channel, and transparent corner pixels confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered. No code or hitboxes changed.
+- Next for Claude: wire `enemy_flyer.png` as the flyer `fly` animation when updating `ASSETS`.
+
 ## 2026-05-30 — [codex] bullet_enemy projectile sprite generated
 - Saved `assets/bullet_enemy.png` — 2 frames, 80x80 per frame, horizontal strip 160x80; high-fidelity hand-painted red/orange hostile energy bolt, right-facing, transparent RGBA.
 - Verification: exact dimensions, alpha/corner transparency, and no green key residue confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered. No code or hitboxes changed.
