@@ -4,6 +4,11 @@
 
 ---
 
+## 2026-05-30 — [codex] bullet_charge projectile sprite generated
+- Saved `assets/bullet_charge.png` — 2 frames, 192x192 per frame, horizontal strip 384x192; high-fidelity hand-painted cyan charged orb with sparks/arcs, right-facing, transparent RGBA.
+- Verification: exact dimensions, alpha/corner transparency, and no visible chroma-key residue confirmed; `node harness.js` = 24/24; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered. No code or hitboxes changed.
+- Next for Claude: use the existing charged-bullet image hook only if needed; asset is ready.
+
 ## 2026-05-30 — [codex] bullet_buster projectile sprite generated
 - Saved `assets/bullet_buster.png` — 2 frames, 96x96 per frame, horizontal strip 192x96; high-fidelity hand-painted cyan energy bolt, right-facing, transparent RGBA.
 - Verification: exact dimensions and alpha/corner transparency confirmed after image_gen chroma-key removal. No code or hitboxes changed.
