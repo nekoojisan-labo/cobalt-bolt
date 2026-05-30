@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-30 - [codex] bg_mid painterly parallax layer generated
+- Saved `assets/bg_mid.png` - 1920x1080 RGBA PNG; high-fidelity hand-painted 2D mid-distance industrial building layer with cyan/magenta neon and warm/cool window lights.
+- Verification: exact 1920x1080 dimensions, real alpha transparency (`alpha min=0 max=255`, top 120px fully transparent), no visible green-key pixels detected, and pixel-perfect horizontal seam (`left/right edge max delta = 0`) confirmed. `node harness.js` = 24/24; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and validate `assets/bg_near.png` with transparent area above foreground structures.
+
 ## 2026-05-30 - [codex] bg_far painterly parallax layer generated
 - Saved `assets/bg_far.png` - 1920x1080 opaque RGB PNG; high-fidelity hand-painted 2D moonlit neon-night far background with sky gradient, moon, and distant industrial skyline.
 - Verification: exact 1920x1080 dimensions, opaque/no-alpha RGB output, and pixel-perfect horizontal seam (`left/right edge max delta = 0`) confirmed. `node harness.js` = 24/24; `node tools/shot.js` rendered.
