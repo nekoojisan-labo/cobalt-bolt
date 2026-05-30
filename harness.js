@@ -173,7 +173,7 @@ if(G.items){
 // ---- T17: 全足場がジャンプで到達可能（地形の到達性をBFSで検査）----
 {
   const sol=G.solids.map(s=>({x1:s.x,x2:s.x+s.w,top:s.y,ground:s.h>=40}));
-  const RISE=68, DX=80;                              // ジャンプの上昇/横到達(余裕込み)
+  const RISE=62, DX=80;                              // ジャンプの上昇/横到達(快適に届く範囲)
   const gapX=(a,b)=> (a.x2>=b.x1 && b.x2>=a.x1) ? 0 : (a.x2<b.x1 ? b.x1-a.x2 : a.x1-b.x2);
   const reach=new Set(), q=[];
   sol.forEach((s,i)=>{ if(s.ground){reach.add(i);q.push(i);} });   // 地面から探索
@@ -182,6 +182,21 @@ if(G.items){
   const un=sol.map((s,i)=>i).filter(i=>!reach.has(i));
   check('全足場がジャンプで到達可能（地形）', un.length===0, '到達不能: '+un.map(i=>`x${sol[i].x1}/top${sol[i].top}`).join(' '));
 }
+
+// ---- T18: 弾は薄い足場(h<40)を貫通して敵に当たる（足場が射線を塞がない）----
+G.start(); G.releaseAll(); for(let i=0;i<8;i++)G.step();
+const tm=G.enemies.find(e=>e.type==='met');
+if(tm){
+  tm.phase='open';
+  G.player.y=G.consts.GROUND_Y-G.consts.PH; G.player.x=tm.x-60; G.player.dir=1;
+  const plat={x:tm.x-30, y:G.player.y-6, w:20, h:14};   // 弾の高さに薄い足場を挟む
+  G.solids.push(plat);
+  const hp0=tm.hp;
+  G.hold('x'); G.step(); G.release('x');
+  for(let i=0;i<16;i++){ tm.phase='open'; G.step(); }
+  check('弾は薄い足場を貫通して敵に当たる', (!tm.alive)||(tm.hp<hp0), `alive=${tm.alive} hp=${tm.hp}/${hp0}`);
+  G.solids.pop();
+} else check('弾は薄い足場を貫通して敵に当たる', false, 'met無し');
 
 // ==== 結果 ====
 console.log('\n==== ROCK BUSTER ヘッドレス検証 ====');
