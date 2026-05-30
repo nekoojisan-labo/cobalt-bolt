@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] ui_hp painterly player HP frame generated
+- Saved `assets/ui_hp.png` - 360x70 RGBA transparent PNG; horizontal cobalt-blue/cyan sci-fi HP bar frame with an intentionally empty inner channel for code-drawn fill.
+- Verification: exact 360x70 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, no visible magenta key residue (`keyish=0`), and inner fill channel fully transparent (`channel=(41,22,278,27)`, `channel_alpha_max=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
+- Scope: image asset only; no code or hitboxes changed.
+- Next: generate and verify `assets/ui_hp_boss.png`.
+
 ## 2026-05-31 - [codex] item_heal_l painterly recovery asset generated
 - Saved `assets/item_heal_l.png` - 96x96 RGBA transparent PNG; large forward-facing gold/green glowing recovery orb with a white plus sign, hand-painted 2D style, no pixel art.
 - Verification: exact 96x96 dimensions, alpha channel present (`alpha min=0 max=255`), transparent corner pixels, and no visible magenta key residue (`keyish=0`) confirmed. `node harness.js` = 26/26; `node tools/spritecheck.js` rendered; `node tools/shot.js` rendered.
