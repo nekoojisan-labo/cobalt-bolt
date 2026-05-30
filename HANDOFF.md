@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-30 — [claude] Codex生成スプライトをゲームに反映・検証・公開
+- `ASSETS.player` に `player_idle`(4f)/`player_run`(6f) を紐付け（scale0.62, ax0.5, ay1）。jump/shootは未生成→idleで自動代用。
+- `tools/preview.js`（実PNG読込→ゲーム画面PNG出力）を新規作成し検証:
+  - idle接地◎ / 走行アニメ(右)◎ / 左右反転(左)◎ / サイズ感◎ → **動きに合わない箇所なし＝調整不要**。
+- `node harness.js` = 24/24維持。コミット＆push済み（公開URLに反映）。Codexの 9ae1f2a も同時push。
+- **次タスク候補（Codex/Claudeどちらでも）**: 同じ流れで `player_jump`/`player_shoot`、敵4種、ボス、弾、タイル/背景を生成→反映。背景/タイル/弾は画像対応の配線を追加実装してから紐付け。
+
 ## 2026-05-30 - [codex] player idle/run PNG assets saved
 - Saved `assets/player_idle.png` - 4 frames, 48x48 per frame, horizontal strip 192x48, RGBA transparent PNG.
 - Saved `assets/player_run.png` - 6 frames, 48x48 per frame, horizontal strip 288x48, RGBA transparent PNG.
