@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-30 — [claude] 塗り2Dパララックス背景3層を反映（背景完成）
+- `BG` に far(0.15)/mid(0.40)/near(0.70) を紐付け。preview(HD)で **月+ネオン工業都市の3層背景がキャラ後ろに合成**されるのを確認（透過・継ぎ目OK）。
+- 当たり判定なしの純・背景レイヤー（設計どおり背景とオブジェクトを分離）。`harness`=24/24維持。
+- **残り（最終）**: ① 地形オブジェクト＝当たり判定(solids)＋塗り2Dアート（地面テクスチャ/縁/足場モジュール）。② FX(muzzle/hit/explosion/dust)。
+  - [claude] 地形アートを solids に重ねる描画フックを実装（当たり判定は不変）→ [codex] ART_DESIGN.md §3 で地面/縁/足場 生成 → 反映。
+  - FX も同様（[claude]フック→[codex]§4生成）。
+
 ## 2026-05-30 - [codex] bg_near painterly parallax layer generated
 - Saved `assets/bg_near.png` - 1920x1080 RGBA PNG; high-fidelity hand-painted 2D near foreground rooftop/duct/sign layer with cyan and magenta neon rim lighting.
 - Verification: exact 1920x1080 dimensions, real alpha transparency (`alpha min=0 max=255`, top 120px fully transparent), no visible green-key pixels detected, and pixel-perfect horizontal seam (`left/right edge max delta = 0`) confirmed. `node harness.js` = 24/24; `node tools/shot.js` rendered.

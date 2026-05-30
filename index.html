@@ -511,9 +511,9 @@ const now=()=> (typeof performance!=='undefined'&&performance.now)?performance.n
 
 // 画像背景（パララックス・当たり判定なし）。assets配置で有効、無ければ下のコード背景。
 const BG = {
-  // far :{src:'assets/bg_far.png',  speed:0.15},
-  // mid :{src:'assets/bg_mid.png',  speed:0.40},
-  // near:{src:'assets/bg_near.png', speed:0.70},
+  far :{src:'assets/bg_far.png',  speed:0.15},
+  mid :{src:'assets/bg_mid.png',  speed:0.40},
+  near:{src:'assets/bg_near.png', speed:0.70},
 };
 function drawBgLayer(cfg){
   if(!cfg||!cfg.src||!ctx) return;
