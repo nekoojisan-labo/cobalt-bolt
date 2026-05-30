@@ -4,6 +4,11 @@
 
 ---
 
+## 2026-05-31 — [claude] 走り撃ちアニメ(runshoot)を反映＝フィードバック3点完了
+- `ASSETS.player.anims.runshoot`(8f/fps14)を紐付け。移動＋射撃中に腕を前に出して発射する走りモーション＋マズルフラッシュ＋弾が一致（preview_runshootで確認）。
+- これでユーザー指摘3点完了: ①走り撃ちの腕前出し ②HP減少緩和(maxhp24等) ③回復の敵ランダムドロップ。
+- `harness`=27/27維持。
+
 ## 2026-05-31 — [codex] player_runshoot painterly hero sprite generated
 - Saved `assets/player_runshoot.png` — 8 frames, 256x256 per frame, horizontal strip 2048x256; same cobalt-blue robot design as `player_run.png` / `player_shoot.png`, running while the right-arm buster cannon is extended forward, with small cyan muzzle flashes on frames 2 and 6.
 - Generated with built-in `image_gen` using the existing run/shoot sprites as visual references, on a flat magenta chroma-key background; locally removed key to RGBA transparency and repacked/cropped to match the run sprite scale and lower foot baseline.

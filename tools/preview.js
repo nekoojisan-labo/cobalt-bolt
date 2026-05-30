@@ -53,6 +53,11 @@ G.hold('x'); G.step(); G.draw(); G.release('x');   // 発射直後（弾が砲�
 clear(); G.start(); G.enemies.length=0; G.releaseAll(); for(let i=0;i<8;i++)G.step(); G.player.x=240; G.player.dir=1;
 for(let i=0;i<50;i++){G.hold('x');G.step();} G.release('x'); G.step(); G.step(); G.draw();
 { const dx=Math.round((G.player.x-G.camX)*RS); save(path.join(__dirname,'preview_charge_zoom.png'),[Math.max(0,dx-120),460,820,560,2]); }
+// runshoot（走りながら射撃）
+clear(); G.start(); G.enemies.length=0; G.player.x=160; G.player.dir=1;
+for(let i=0;i<12;i++){G.hold('arrowright');G.step();}
+G.hold('x'); G.step(); G.release('x'); G.hold('arrowright'); G.step(); G.draw();
+{ const dx=Math.round((G.player.x-G.camX)*RS); save(path.join(__dirname,'preview_runshoot_zoom.png'),[Math.max(0,dx-160),600,380,380,3]); }
 // boss（ボス部屋）
 clear(); G.start(); G.player.x=G.consts.BOSS_TRIGGER+5; for(let i=0;i<5;i++)G.step();
 G.boss.state='idle'; G.boss.timer=0; for(let i=0;i<12;i++)G.step(); G.draw();
