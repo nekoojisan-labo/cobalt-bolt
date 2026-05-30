@@ -1,0 +1,44 @@
+// 実素材プレビュー: index.html の ASSETS 設定どおりに実PNGを読み込み、
+// ゲーム画面をPNG出力して「実際にスプライトが載った見た目」を確認する。
+const fs=require('fs'), zlib=require('zlib'), vm=require('vm'), path=require('path');
+const REPO=path.join(__dirname,'..');
+const W=480,H=270,SCALE=3;
+const buf=new Uint8Array(W*H*4); const clear=()=>buf.fill(0);
+function parseColor(c){if(typeof c==='object'&&c&&c.__grad)return c;if(typeof c!=='string')return{r:255,g:0,b:255,a:1};c=c.trim();if(c[0]==='#'){let h=c.slice(1);if(h.length===3)h=h.split('').map(x=>x+x).join('');return{r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16),a:1};}const m=c.match(/rgba?\(([^)]+)\)/);if(m){const p=m[1].split(',').map(parseFloat);return{r:p[0],g:p[1],b:p[2],a:p[3]===undefined?1:p[3]};}return{r:255,g:0,b:255,a:1};}
+function setPx(x,y,col){x|=0;y|=0;if(x<0||y<0||x>=W||y>=H)return;const i=(y*W+x)*4,a=col.a===undefined?1:col.a;if(a<=0)return;if(a>=1){buf[i]=col.r;buf[i+1]=col.g;buf[i+2]=col.b;buf[i+3]=255;}else{buf[i]=col.r*a+buf[i]*(1-a);buf[i+1]=col.g*a+buf[i+1]*(1-a);buf[i+2]=col.b*a+buf[i+2]*(1-a);buf[i+3]=255;}}
+function decodePNG(b){let p=8,width,height,bitDepth,colorType,interlace,palette=null,trns=null;const idat=[];while(p<b.length){const len=b.readUInt32BE(p);const type=b.toString('ascii',p+4,p+8);const data=b.slice(p+8,p+8+len);p+=12+len;if(type==='IHDR'){width=data.readUInt32BE(0);height=data.readUInt32BE(4);bitDepth=data[8];colorType=data[9];interlace=data[12];}else if(type==='PLTE')palette=data;else if(type==='tRNS')trns=data;else if(type==='IDAT')idat.push(data);else if(type==='IEND')break;}if(interlace)throw new Error('interlaced');const raw=zlib.inflateSync(Buffer.concat(idat));const channels={0:1,2:3,3:1,4:2,6:4}[colorType];const bits=channels*bitDepth;const stride=Math.ceil(bits*width/8),fbpp=Math.max(1,Math.ceil(bits/8));const out=Buffer.alloc(stride*height);let prev=Buffer.alloc(stride);for(let y=0;y<height;y++){const ft=raw[y*(stride+1)];const cur=raw.slice(y*(stride+1)+1,y*(stride+1)+1+stride);const rec=Buffer.alloc(stride);for(let i=0;i<stride;i++){const a=i>=fbpp?rec[i-fbpp]:0,bb=prev[i],c=i>=fbpp?prev[i-fbpp]:0,x=cur[i];let v;if(ft===0)v=x;else if(ft===1)v=x+a;else if(ft===2)v=x+bb;else if(ft===3)v=x+((a+bb)>>1);else if(ft===4){const pa=Math.abs(bb-c),pb=Math.abs(a-c),pc=Math.abs(a+bb-2*c);const pr=(pa<=pb&&pa<=pc)?a:(pb<=pc)?bb:c;v=x+pr;}else v=x;rec[i]=v&0xff;}rec.copy(out,y*stride);prev=rec;}const data=Buffer.alloc(width*height*4);for(let y=0;y<height;y++)for(let x=0;x<width;x++){const i=(y*width+x)*4;if(colorType===6){const o=y*stride+x*4;data[i]=out[o];data[i+1]=out[o+1];data[i+2]=out[o+2];data[i+3]=out[o+3];}else if(colorType===2){const o=y*stride+x*3;data[i]=out[o];data[i+1]=out[o+1];data[i+2]=out[o+2];data[i+3]=255;}else if(colorType===0){const o=y*stride+x;data[i]=data[i+1]=data[i+2]=out[o];data[i+3]=255;}else if(colorType===4){const o=y*stride+x*2;data[i]=data[i+1]=data[i+2]=out[o];data[i+3]=out[o+1];}else if(colorType===3){let idx;if(bitDepth===8)idx=out[y*stride+x];else{const per=8/bitDepth;const by=out[y*stride+Math.floor(x/per)];const sh=8-bitDepth*((x%per)+1);idx=(by>>sh)&((1<<bitDepth)-1);}data[i]=palette[idx*3];data[i+1]=palette[idx*3+1];data[i+2]=palette[idx*3+2];data[i+3]=trns&&idx<trns.length?trns[idx]:255;}}return{width,height,data};}
+let t={sx:1,sy:1,tx:0,ty:0};const stack=[];
+function gradColor(s,u){if(!s.length)return{r:0,g:0,b:0,a:1};if(u<=s[0].o)return s[0].c;for(let i=1;i<s.length;i++){if(u<=s[i].o){const a=s[i-1],b=s[i],k=(u-a.o)/((b.o-a.o)||1);return{r:a.c.r+(b.c.r-a.c.r)*k,g:a.c.g+(b.c.g-a.c.g)*k,b:a.c.b+(b.c.b-a.c.b)*k,a:1};}}return s[s.length-1].c;}
+const ctx={imageSmoothingEnabled:false,fillStyle:'#000',font:'',textAlign:'left',textBaseline:'alphabetic',
+  save(){stack.push({...t});},restore(){if(stack.length)t=stack.pop();},translate(dx,dy){t.tx+=t.sx*dx;t.ty+=t.sy*dy;},scale(ax,ay){t.sx*=ax;t.sy*=ay;},
+  createLinearGradient(x0,y0,x1,y1){return{__grad:true,p0:{x:t.tx+t.sx*x0,y:t.ty+t.sy*y0},p1:{x:t.tx+t.sx*x1,y:t.ty+t.sy*y1},stops:[],addColorStop(o,c){this.stops.push({o,c:parseColor(c)});}};},
+  fillRect(x,y,w,h){const xa=t.tx+t.sx*x,xb=t.tx+t.sx*(x+w),ya=t.ty+t.sy*y,yb=t.ty+t.sy*(y+h);const x0=Math.floor(Math.min(xa,xb)),x1=Math.ceil(Math.max(xa,xb)),y0=Math.floor(Math.min(ya,yb)),y1=Math.ceil(Math.max(ya,yb));const fs=this.fillStyle;if(fs&&fs.__grad){const gx=fs.p1.x-fs.p0.x,gy=fs.p1.y-fs.p0.y,l2=(gx*gx+gy*gy)||1;for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++){let u=((px-fs.p0.x)*gx+(py-fs.p0.y)*gy)/l2;u=u<0?0:u>1?1:u;setPx(px,py,gradColor(fs.stops,u));}}else{const col=parseColor(fs);for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++)setPx(px,py,col);}},
+  fillText(){},
+  drawImage(img){const a=[...arguments];let sx,sy,sw,sh,dx,dy,dw,dh;if(a.length>=9){[,sx,sy,sw,sh,dx,dy,dw,dh]=a;}else if(a.length===5){sx=0;sy=0;sw=img.width;sh=img.height;[,dx,dy,dw,dh]=a;}else{sx=0;sy=0;sw=img.width;sh=img.height;[,dx,dy]=a;dw=sw;dh=sh;}const xa=t.tx+t.sx*dx,xb=t.tx+t.sx*(dx+dw),ya=t.ty+t.sy*dy,yb=t.ty+t.sy*(dy+dh);const X0=Math.floor(Math.min(xa,xb)),X1=Math.ceil(Math.max(xa,xb)),Y0=Math.floor(Math.min(ya,yb)),Y1=Math.ceil(Math.max(ya,yb));for(let py=Y0;py<Y1;py++)for(let px=X0;px<X1;px++){const destX=(px+0.5-t.tx)/t.sx,destY=(py+0.5-t.ty)/t.sy;const u=(destX-dx)/dw,v=(destY-dy)/dh;if(u<0||u>=1||v<0||v>=1)continue;const sX=Math.min(img.width-1,Math.floor(sx+u*sw)),sY=Math.min(img.height-1,Math.floor(sy+v*sh));const o=(sY*img.width+sX)*4;setPx(px,py,{r:img.data[o],g:img.data[o+1],b:img.data[o+2],a:img.data[o+3]/255});}}
+};
+class Image{set src(p){try{const fp=path.isAbsolute(p)?p:path.join(REPO,p);const d=decodePNG(fs.readFileSync(fp));this.width=d.width;this.height=d.height;this.data=d.data;if(this.onload)this.onload();}catch(e){if(this.onerror)this.onerror(e);}}}
+globalThis.Image=Image;
+const crcT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+const crc32=b=>{let c=0xffffffff;for(let i=0;i<b.length;i++)c=crcT[(c^b[i])&0xff]^(c>>>8);return(c^0xffffffff)>>>0;};
+const chunk=(ty,d)=>{const l=Buffer.alloc(4);l.writeUInt32BE(d.length);const tt=Buffer.from(ty,'ascii');const cr=Buffer.alloc(4);cr.writeUInt32BE(crc32(Buffer.concat([tt,d])));return Buffer.concat([l,tt,d,cr]);};
+function save(file,crop){let cx=0,cy=0,cw=W,ch=H,sc=SCALE;if(crop)[cx,cy,cw,ch,sc]=crop;const w=cw*sc,h=ch*sc,raw=Buffer.alloc((w*4+1)*h);for(let y=0;y<h;y++){raw[y*(w*4+1)]=0;const sy=cy+((y/sc)|0);for(let x=0;x<w;x++){const sx=cx+((x/sc)|0),si=(sy*W+sx)*4,di=y*(w*4+1)+1+x*4;raw[di]=buf[si];raw[di+1]=buf[si+1];raw[di+2]=buf[si+2];raw[di+3]=buf[si+3]||255;}}const ih=Buffer.alloc(13);ih.writeUInt32BE(w,0);ih.writeUInt32BE(h,4);ih[8]=8;ih[9]=6;fs.writeFileSync(file,Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',ih),chunk('IDAT',zlib.deflateSync(raw)),chunk('IEND',Buffer.alloc(0))]));}
+
+globalThis.__HEADLESS=true;
+globalThis.document={getElementById:()=>({getContext:()=>ctx,style:{},width:W,height:H,addEventListener(){}})};
+vm.runInThisContext(fs.readFileSync(path.join(REPO,'index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1]);
+const G=globalThis.__GAME;
+G.loadAssets(); // index.html の ASSETS をそのまま読み込む（実PNG）
+const rd=G.assets.player&&G.assets.player.anims.idle.ready;
+console.log('player idle ready =', rd, ' run ready =', G.assets.player&&G.assets.player.anims.run.ready);
+
+// idle（静止）
+clear(); G.start(); G.player.x=450; for(let i=0;i<40;i++)G.step(); G.draw();
+save(path.join(__dirname,'preview_play.png'));
+save(path.join(__dirname,'preview_idle_zoom.png'),[200,176,120,60,9]);
+// run（右）敵を除外してクリーンに
+clear(); G.start(); G.enemies.length=0; G.player.x=160; for(let i=0;i<30;i++){G.hold('arrowright');G.step();} G.draw();
+save(path.join(__dirname,'preview_run_zoom.png'),[Math.max(0,Math.round(G.player.x-G.camX)-50),176,120,60,9]);
+// run（左）
+clear(); G.start(); G.enemies.length=0; G.player.x=300; for(let i=0;i<30;i++){G.release('arrowright');G.hold('arrowleft');G.step();} G.draw();
+save(path.join(__dirname,'preview_left_zoom.png'),[Math.max(0,Math.round(G.player.x-G.camX)-50),176,120,60,9]);
+console.log('preview saved: preview_play / preview_idle_zoom / preview_run_zoom / preview_left_zoom');

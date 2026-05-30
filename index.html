@@ -89,11 +89,11 @@ function sfx(type){
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 const ASSETS = {
-  // 例) player:{ fw:48, fh:48, scale:1, ax:0.5, ay:1, anims:{
-  //        idle:{src:'assets/player_idle.png', frames:4, fps:6},
-  //        run :{src:'assets/player_run.png',  frames:6, fps:12},
-  //        jump:{src:'assets/player_jump.png', frames:2, fps:6},
-  //        shoot:{src:'assets/player_shoot.png',frames:2, fps:12} } }
+  player:{ fw:48, fh:48, scale:0.62, ax:0.5, ay:1, anims:{
+    idle:{src:'assets/player_idle.png', frames:4, fps:6},
+    run :{src:'assets/player_run.png',  frames:6, fps:12},
+    // jump/shoot は未生成のため idle で代用（drawSheetが自動フォールバック）
+  }},
 };
 function loadAssets(){
   if(typeof Image==='undefined') return;   // ブラウザ/検証環境でImageがあるときのみ
