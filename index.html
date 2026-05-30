@@ -629,7 +629,35 @@ function tile(x,y,w,h){
   px(x,y,w,h,'#2a3358'); px(x,y,w,3,'#4a5a96'); px(x,y+3,w,2,'#39477a'); px(x,y+h-3,w,3,'#171c34');
   for(let tx=x;tx<x+w;tx+=16){ px(tx,y+5,1,h-8,'#202746'); px(tx+2,y+6,2,2,'#5a6aa8'); }
 }
-function drawSolids(){ for(const s of solids){ if(s.x+s.w<camX||s.x>camX+W)continue; tile(s.x-camX,s.y,s.w,s.h); } }
+// 地形アート（solidsに重ねる・当たり判定は不変・無ければtile()）
+const TERRAIN = {
+  // groundFill:{src:'assets/ground_fill.png'},      // シームレス地面本体(横タイル)
+  // groundTop :{src:'assets/ground_top.png', h:14}, // 地面の上縁(世界px高・横タイル)
+  // platform  :{src:'assets/platform.png'},         // 足場モジュール(横ストレッチ)
+};
+function _tileX(r, dx, dy, dw, dh){
+  const iw=r.img.width, ih=r.img.height, sc=dh/ih, uw=Math.max(1,iw*sc);
+  for(let t=0; t<dw; t+=uw){ const seg=Math.min(uw, dw-t);
+    ctx.drawImage(r.img, 0,0, Math.max(1,iw*(seg/uw)), ih, Math.round(dx+t), Math.round(dy), Math.ceil(seg), Math.round(dh)); }
+}
+function drawTerrainSolid(s){
+  if(!ctx) return false;
+  const x=s.x-camX, ground=s.h>=40;
+  if(ground){
+    const f=TERRAIN.groundFill && getImg(TERRAIN.groundFill.src);
+    if(f && f.ready && f.img){
+      _tileX(f, x, s.y, s.w, s.h);
+      const t=TERRAIN.groundTop && getImg(TERRAIN.groundTop.src);
+      if(t && t.ready && t.img) _tileX(t, x, s.y, s.w, TERRAIN.groundTop.h||14);
+      return true;
+    }
+  } else {
+    const p=TERRAIN.platform && getImg(TERRAIN.platform.src);
+    if(p && p.ready && p.img){ ctx.drawImage(p.img, 0,0,p.img.width,p.img.height, Math.round(x), Math.round(s.y), Math.round(s.w), Math.round(s.h)); return true; }
+  }
+  return false;
+}
+function drawSolids(){ for(const s of solids){ if(s.x+s.w<camX||s.x>camX+W)continue; if(!drawTerrainSolid(s)) tile(s.x-camX,s.y,s.w,s.h); } }
 
 function drawPlayer(){
   if(player.inv>0 && Math.floor(player.blink/3)%2===0 && !player.dead) return;
@@ -767,14 +795,36 @@ function drawBullets(){
 }
 function drawFx(){ for(const p of fx){ px(p.x-camX,p.y,3,3,p.life>8?'#fff':p.col); } }
 
-function drawHUD(){
+// HPバー画像（枠＋内側fill。無ければ下のコードゲージ）。fill領域は素材に合わせ調整。
+const UI_SPR = {
+  // hp  :{src:'assets/ui_hp.png',      x:10,    y:8, w:104, h:20, fill:{x:8,y:6,w:88,h:8}},
+  // boss:{src:'assets/ui_hp_boss.png', x:W-114, y:8, w:104, h:18, fill:{x:8,y:5,w:88,h:8}, rtl:true},
+};
+function hpBarImg(cfg, frac){
+  const r=getImg(cfg.src); if(!r||!r.ready||!r.img||!ctx) return false;
+  const f=cfg.fill; px(cfg.x+f.x, cfg.y+f.y, f.w, f.h, '#0e1530');         // 下地
+  const fw=Math.max(0,Math.round(f.w*clamp(frac,0,1)));
+  const ox=cfg.rtl ? cfg.x+f.x+f.w-fw : cfg.x+f.x;
+  for(let i=0;i<fw;i++){ const t=(cfg.rtl?(f.w-1-i):i)/Math.max(1,f.w-1);
+    ctx.fillStyle = cfg.boss ? (t<0.5?'#ff7a00':'#ffd23f') : (t<0.25?'#ff5a4a':t<0.5?'#ffd23f':'#5ad1ff');
+    ctx.fillRect((cfg.rtl?cfg.x+f.x+f.w-1-i:ox+i)|0, (cfg.y+f.y)|0, 1, f.h); }
+  ctx.drawImage(r.img,0,0,r.img.width,r.img.height, cfg.x,cfg.y,cfg.w,cfg.h);  // 枠を上に
+  return true;
+}
+function hpGauge(){
   px(8,8,12,player.maxhp*2+8,'#0a0e1a'); px(9,9,10,player.maxhp*2+6,'#16203c');
   for(let i=0;i<player.maxhp;i++){ const yy=10+(player.maxhp-1-i)*2; px(10,yy,8,2, i<player.hp?(i<4?'#ff5a4a':'#5ad1ff'):'#0e1530'); }
   px(8,4,12,3,'#ffd23f');
+}
+function bossGauge(){
+  const bx=W-20; px(bx,8,12,boss.maxhp*1.4+8,'#0a0e1a');
+  for(let i=0;i<boss.maxhp;i++){ const yy=10+(boss.maxhp-1-i)*1.4; px(bx+2,yy,8,1.4, i<boss.hp?'#ff7a00':'#0e1530'); }
+  px(bx,4,12,3,'#ff3b3b');
+}
+function drawHUD(){
+  if(!(UI_SPR.hp && hpBarImg(UI_SPR.hp, player.hp/player.maxhp))) hpGauge();
   if(bossActive && boss && !boss.dead){
-    const bx=W-20; px(bx,8,12,boss.maxhp*1.4+8,'#0a0e1a');
-    for(let i=0;i<boss.maxhp;i++){ const yy=10+(boss.maxhp-1-i)*1.4; px(bx+2,yy,8,1.4, i<boss.hp?'#ff7a00':'#0e1530'); }
-    px(bx,4,12,3,'#ff3b3b');
+    if(!(UI_SPR.boss && hpBarImg(Object.assign({boss:true},UI_SPR.boss), boss.hp/boss.maxhp))) bossGauge();
   }
 }
 function drawGate(){
