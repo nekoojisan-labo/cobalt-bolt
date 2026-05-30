@@ -455,29 +455,46 @@ function drawPlayer(){
   const x=Math.round(player.x-camX), y=Math.round(player.y), d=player.dir;
   ctx.save();
   if(d<0){ctx.translate(x+player.w,y);ctx.scale(-1,1);} else ctx.translate(x,y);
-  const step=Math.floor(player.anim)%2;
-  const O='#081026';
-  // --- アウトライン（シルエットを濃色で先描き）---
-  px(3,-1,14,13,O);                 // 頭・ヘルメット
-  px(3,9,13,12,O);                  // 胴
-  px(14,11,(player.charge>=40?13:11),8,O); // 腕・バスター
-  px(1,17,8,9,O); px(9,17,9,9,O);   // 脚・ブーツ
-  // --- 脚 ---
-  px(3,18,4,5,'#1a3a7a'); px(11,18,4,5,'#1a3a7a');
-  if(player.onGround&&player.vx!==0){ if(step)px(3,20,4,3,'#0d2552'); else px(11,20,4,3,'#0d2552'); }
-  px(2,23,6,2,'#cfe8ff'); px(11,23,6,2,'#cfe8ff');   // ブーツ先
-  // --- 胴 ---
-  px(4,10,11,10,'#2f6df0'); px(4,10,11,3,'#6aa6ff'); px(4,17,11,3,'#1a46b0'); px(7,12,5,5,'#bfe0ff');
-  // --- 腕・バスター ---
+  // ===== パレット =====
+  const O='#0a1024', B='#2f6df0', BL='#173c88', BH='#6aa6ff', CY='#bfe6ff',
+        SK='#ffd1a0', SKL='#ffe6c8', EY='#12204e', WH='#ffffff';
+  const run = player.onGround && Math.abs(player.vx)>0.1;
+  const fr  = run ? Math.floor(player.anim)%2 : -1;
+  const bob = (!run && player.onGround) ? Math.floor(player.blink/26)%2 : 0;   // 待機の呼吸
+  const blink = (!run && player.onGround && Math.floor(player.blink/70)%9===0);
+  // ===== 脚（歩行アニメ）=====
+  if(!run){
+    px(2,17,15,9,O); px(3,18,4,5,BL); px(10,18,4,5,BL); px(3,18,4,2,B); px(10,18,4,2,B);
+    px(2,23,6,2,CY); px(10,23,6,2,CY);
+  }else if(fr===0){
+    px(1,17,15,9,O); px(2,18,4,5,BL); px(11,18,4,4,BL); px(2,18,4,2,B); px(11,18,4,2,B);
+    px(1,23,6,2,CY); px(12,22,5,2,CY);
+  }else{
+    px(3,17,15,9,O); px(4,18,4,4,BL); px(10,18,4,5,BL); px(4,18,4,2,B); px(10,18,4,2,B);
+    px(4,22,5,2,CY); px(11,23,6,2,CY);
+  }
+  // ===== 胴（bobで1px上下）=====
+  const by=10+bob;
+  px(3,by-1,13,11,O); px(4,by,11,9,B); px(4,by,11,3,BH); px(4,by+7,11,2,BL); px(4,by,2,9,BH);
+  px(7,by+2,5,5,CY); px(8,by+3,3,3,WH);
+  // ===== 腕・バスター =====
+  const ay=by+2;
   if(player.charge>0){
-    const cc=player.charge>=40?(Math.floor(player.blink/2)%2?'#eafcff':'#9fe6ff'):'#6fb8ff';
-    px(15,12,8,7,cc); px(23,13,3,5,cc); if(player.charge>=40){px(24,12,2,7,'#fff');}
-  }else{ px(15,12,7,6,'#2f6df0'); px(15,12,7,2,'#6aa6ff'); px(22,13,3,4,'#0f2e6e'); }
-  // --- 顔 ---
-  px(5,3,10,8,'#ffd9a8'); px(5,3,10,2,'#ffe9c8'); px(6,6,2,3,'#16306e'); px(9,6,3,3,'#16306e'); px(9,6,1,1,'#7fb4ff');
-  // --- ヘルメット ---
-  px(4,0,12,5,'#2f6df0'); px(4,0,12,2,'#8fc2ff'); px(3,3,2,5,'#1a46b0'); px(15,3,2,5,'#1a46b0');
-  px(13,1,3,3,'#bfe0ff'); px(7,-1,5,2,'#9fc8ff');
+    const cc=player.charge>=40?(Math.floor(player.blink/2)%2?'#eafcff':'#9fe6ff'):'#7fc4ff';
+    px(14,ay-1,12,9,O); px(15,ay,9,7,cc); px(24,ay+1,2,5,cc); px(16,ay+1,5,2,WH);
+  }else{
+    px(14,ay-1,11,8,O); px(15,ay,8,6,B); px(15,ay,8,2,BH); px(15,ay+4,8,2,BL);
+    px(22,ay+1,3,4,'#0e2a66'); px(23,ay+2,2,2,'#3a6ad0');
+  }
+  // ===== 顔 =====
+  const hy=bob;
+  px(4,hy+3,11,8,O); px(5,hy+4,9,6,SK); px(5,hy+4,9,2,SKL);
+  if(blink){ px(8,hy+6,2,1,EY); px(11,hy+6,2,1,EY); }
+  else{ px(8,hy+5,2,3,EY); px(11,hy+5,2,3,EY); px(11,hy+5,1,1,'#9fb8ff'); }
+  // ===== ヘルメット =====
+  px(3,hy-1,13,6,O); px(4,hy,11,4,B); px(4,hy,11,2,BH);
+  px(4,hy+3,2,3,BL); px(13,hy+3,2,4,BL); px(13,hy,3,3,CY);
+  px(6,hy-2,6,2,BH); px(7,hy-3,4,1,CY);
   ctx.restore();
 }
 
