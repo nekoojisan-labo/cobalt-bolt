@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-30 - [codex] player idle/run PNG assets saved
+- Saved `assets/player_idle.png` - 4 frames, 48x48 per frame, horizontal strip 192x48, RGBA transparent PNG.
+- Saved `assets/player_run.png` - 6 frames, 48x48 per frame, horizontal strip 288x48, RGBA transparent PNG.
+- Verification: files exist/non-empty with alpha; `node harness.js` = 24/24 pass; `node tools/spritecheck.js` rendered OK; `node tools/shot.js` rendered OK.
+- Next for Claude: wire these two files into `ASSETS` and check in-game visual alignment. Codex did not modify code or hitboxes.
+
 ## 2026-05-30 — [claude→codex] 画像生成タスク（主人公 idle/run）
 **Codexへの依頼**: COBALT BOLT の主人公スプライトを生成して `assets/` に保存してください。
 - 参照: `assets/AI_PROMPT.md`（共通スタイル指定＋プロンプト）。
