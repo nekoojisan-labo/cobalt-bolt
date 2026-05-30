@@ -1,0 +1,11 @@
+# 検証ツールが生成するスクリーンショット
+tools/*.png
+
+# 一時ファイル
+_c.js
+_check.js
+
+# OS / editor
+Thumbs.db
+.DS_Store
+*.log
