@@ -3,9 +3,14 @@
 > このファイルは **Codex と Claude Code の共通の指示書**です。両エージェントはこの1ファイルを真実の源とし、
 > `HANDOFF.md` と `git log` を読んでから作業を始めること。
 
+## ⭐ アート方針（最重要・2026-05-30更新）
+- **画風は「高精細イラスト/塗りの2D」へ転換**（ピクセルアートをやめる）。内部レンダリングは **1920×1080**、ワールド座標・当たり判定は据え置きで描画のみ4倍化＋スムージング。
+- **アート素材の公式設計書 = [`ART_DESIGN.md`](./ART_DESIGN.md)**。素材生成はこの1冊に従う。
+- 旧 `assets/AI_PROMPT.md`・`assets/ASSETS_GUIDE.md` は**ピクセルアート時代の旧仕様＝廃止**。参照しないこと。
+
 ## プロジェクト概要
 **COBALT BOLT** — HTML5 Canvasの**単一ファイル**横スクロールアクションゲーム（ロックマン風）。
-1ステージ＋雑魚4種（met / walker / flyer / turret）＋ボス（行動3パターン）。素材なしでも動く（ドット絵はコード描画）。
+1ステージ＋雑魚4種（met / walker / flyer / turret）＋ボス（行動3パターン）。素材なしでも動く（現状コード描画→高精細2D素材へ差し替え中）。
 
 - リポジトリ: `nekoojisan-labo/cobalt-bolt`（Public）
 - 公開URL: https://nekoojisan-labo.github.io/cobalt-bolt/ （`git push origin main` で自動更新）

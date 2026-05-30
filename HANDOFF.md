@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-05-30 — [claude] ★アート方針転換: 高精細2D(塗り/フルHD)＋設計書ART_DESIGN.md作成
+- ユーザー判断: **現状の画質は低すぎ→ドット絵をやめ高精細イラスト2Dへ転換**、解像度フルHD(1920×1080)。素材は別途ちゃんと作る。
+- 作成: **`ART_DESIGN.md`**（5章942行のアートバイブル: 主人公/敵ボス/環境/弾FX UI/技術。各アセットにサイズ・コマ・fps・ファイル名・視覚ブリーフ・英語painterlyプロンプト・STYLE HEADER）。
+- AGENTS.md更新: アート公式設計書=ART_DESIGN.md。旧 `assets/AI_PROMPT.md`/`ASSETS_GUIDE.md`(ピクセル時代)は**廃止**。
+- **次タスク（分担）**:
+  - [codex] ART_DESIGN.md に従い素材生成（まず主人公 idle/run の塗り2D・256×256）→assets/保存→[codex]コミット。**毎回プロンプト先頭に各章STYLE HEADERを付ける**。
+  - [claude] **エンジンを1920×1080化**（RENDER_SCALE=4・スムージングON・image-rendering解除・ASSETS scale再計算・背景/地形/弾FXの画像描画フック追加）。素材到着で反映・検証(preview/harness)。
+
 ## 2026-05-30 — [claude] Codex生成スプライトをゲームに反映・検証・公開
 - `ASSETS.player` に `player_idle`(4f)/`player_run`(6f) を紐付け（scale0.62, ax0.5, ay1）。jump/shootは未生成→idleで自動代用。
 - `tools/preview.js`（実PNG読込→ゲーム画面PNG出力）を新規作成し検証:
