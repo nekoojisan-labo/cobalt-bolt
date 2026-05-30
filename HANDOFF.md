@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-30 — [claude] 専用フォルダ cobalt-bolt に移設（Codex/Claude 共有）
+- ローカル正本を `C:\Users\withd\Desktop\cobalt-bolt` に変更（GitHubからclone。git履歴・remote・Pages URLは不変）。
+- **Codex/Claude は今後この1フォルダを共有**して作業する。
+- 旧 `rockman-style-game` は破棄予定（Codex Desktop等のロック解除後に削除）。**旧フォルダは触らないこと**。
+- 検証: 新フォルダで `node harness.js` = 24/24、`node tools/shot.js` 描画OK、remote正常。
+- Codexへ: ワークスペースは **cobalt-bolt** を開くこと。
+
 ## 2026-05-30 — [claude] 全要素の画像生成ガイドを整備
 - ユーザー方針: **まず画像を作る**（背景/ステージobj/ボス/敵/主人公/弾 の全要素を高精細化）。
 - 更新: `assets/AI_PROMPT.md` を全要素・統一画風の完全版に（共通スタイル指定＋各プロンプト＋サイズ/コマ/ファイル名/生成順）。

@@ -9,7 +9,7 @@
 
 - リポジトリ: `nekoojisan-labo/cobalt-bolt`（Public）
 - 公開URL: https://nekoojisan-labo.github.io/cobalt-bolt/ （`git push origin main` で自動更新）
-- ローカル正本: `C:\Users\withd\Desktop\rockman-style-game`
+- ローカル正本（Codex/Claude 共有フォルダ）: `C:\Users\withd\Desktop\cobalt-bolt`
 
 ## ファイル構成
 | ファイル | 役割 |
