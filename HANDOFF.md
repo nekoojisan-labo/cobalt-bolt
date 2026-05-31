@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] add sfx_charge.mp3
+- File: `assets/sfx_charge.mp3`
+- Source: OpenGameArt "Sound effects Mini Pack1.5" archive, internal file `Power-up/MP3/Powerup2.mp3`; https://opengameart.org/content/sound-effects-mini-pack15
+- License: CC0.
+- Verification: MP3 frame scan passed (`bytes=20936`, `duration=0.836s`), not HTML/empty. `node harness.js` 28/28; `node tools/shot.js` rendered.
+
 ## 2026-05-31 - [codex] add sfx_shoot.mp3
 - File: `assets/sfx_shoot.mp3`
 - Source: OpenGameArt "Sound effects Mini Pack1.5" archive, internal file `Laser-weapon/MP3/Laser-weapon.mp3`; https://opengameart.org/content/sound-effects-mini-pack15
