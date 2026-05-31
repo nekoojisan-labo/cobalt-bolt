@@ -18,7 +18,7 @@ const ctx={imageSmoothingEnabled:false,fillStyle:'#000',font:'',textAlign:'left'
   fillText(){},
   drawImage(img){const a=[...arguments];let sx,sy,sw,sh,dx,dy,dw,dh;if(a.length>=9){[,sx,sy,sw,sh,dx,dy,dw,dh]=a;}else if(a.length===5){sx=0;sy=0;sw=img.width;sh=img.height;[,dx,dy,dw,dh]=a;}else{sx=0;sy=0;sw=img.width;sh=img.height;[,dx,dy]=a;dw=sw;dh=sh;}const xa=t.tx+t.sx*dx,xb=t.tx+t.sx*(dx+dw),ya=t.ty+t.sy*dy,yb=t.ty+t.sy*(dy+dh);const X0=Math.floor(Math.min(xa,xb)),X1=Math.ceil(Math.max(xa,xb)),Y0=Math.floor(Math.min(ya,yb)),Y1=Math.ceil(Math.max(ya,yb));for(let py=Y0;py<Y1;py++)for(let px=X0;px<X1;px++){const destX=(px+0.5-t.tx)/t.sx,destY=(py+0.5-t.ty)/t.sy;const u=(destX-dx)/dw,v=(destY-dy)/dh;if(u<0||u>=1||v<0||v>=1)continue;const sX=Math.min(img.width-1,Math.floor(sx+u*sw)),sY=Math.min(img.height-1,Math.floor(sy+v*sh));const o=(sY*img.width+sX)*4;setPx(px,py,{r:img.data[o],g:img.data[o+1],b:img.data[o+2],a:img.data[o+3]/255});}}
 };
-class Image{set src(p){try{const fp=path.isAbsolute(p)?p:path.join(REPO,p);const d=decodePNG(fs.readFileSync(fp));this.width=d.width;this.height=d.height;this.data=d.data;if(this.onload)this.onload();}catch(e){if(this.onerror)this.onerror(e);}}}
+class Image{set src(p){try{const c=String(p).split('?')[0];const fp=path.isAbsolute(c)?c:path.join(REPO,c);const d=decodePNG(fs.readFileSync(fp));this.width=d.width;this.height=d.height;this.data=d.data;if(this.onload)this.onload();}catch(e){if(this.onerror)this.onerror(e);}}}
 globalThis.Image=Image;
 const crcT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
 const crc32=b=>{let c=0xffffffff;for(let i=0;i<b.length;i++)c=crcT[(c^b[i])&0xff]^(c>>>8);return(c^0xffffffff)>>>0;};

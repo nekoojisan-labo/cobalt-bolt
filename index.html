@@ -166,6 +166,9 @@ function manageBgm(){            // 毎フレーム呼ぶ（状態に応じてBG
 //======================================================================
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
+// ★キャッシュ無効化: 素材PNGを差し替えたら ASSET_VER を変えると、ブラウザ/CDNが必ず新素材を取得する。
+const ASSET_VER = '2026053101';
+function _av(s){ return s + (s.indexOf('?')<0 ? '?v=' : '&v=') + ASSET_VER; }
 const ASSETS = {
   // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
   player:{ fw:256, fh:256, scale:0.16, ax:0.5, ay:0.98, anims:{
@@ -207,7 +210,7 @@ function loadAssets(){
   if(typeof Image==='undefined') return;   // ブラウザ/検証環境でImageがあるときのみ
   for(const k in ASSETS){ const a=ASSETS[k];
     for(const name in (a.anims||{})){ const an=a.anims[name]; if(!an.src) continue;
-      const im=new Image(); an.ready=false; an.settled=false; im.onload=()=>{an.ready=true;an.settled=true;}; im.onerror=()=>{an.settled=true;}; im.src=an.src; an.img=im;
+      const im=new Image(); an.ready=false; an.settled=false; im.onload=()=>{an.ready=true;an.settled=true;}; im.onerror=()=>{an.settled=true;}; im.src=_av(an.src); an.img=im;
     }
   }
   loadRig();   // パーツ分割リグの素材も読み込む
@@ -255,7 +258,7 @@ function loadRig(){
   for(const k in RIG){ const r=RIG[k];
     for(const pn in r.parts){ const p=r.parts[pn]; if(!p.src) continue;
       const im=new Image(); p.ready=false; p.settled=false;
-      im.onload=()=>{p.ready=true;p.settled=true;}; im.onerror=()=>{p.settled=true;}; im.src=p.src; p.img=im;
+      im.onload=()=>{p.ready=true;p.settled=true;}; im.onerror=()=>{p.settled=true;}; im.src=_av(p.src); p.img=im;
     }
   }
 }
@@ -303,7 +306,7 @@ function getImg(src){
   if(!src) return null;
   if(_imgreg[src]) return _imgreg[src];
   const o={ready:false,settled:false,img:null}; _imgreg[src]=o;
-  if(typeof Image!=='undefined'){ const im=new Image(); im.onload=()=>{o.ready=true;o.settled=true;}; im.onerror=()=>{o.settled=true;}; im.src=src; o.img=im; }
+  if(typeof Image!=='undefined'){ const im=new Image(); im.onload=()=>{o.ready=true;o.settled=true;}; im.onerror=()=>{o.settled=true;}; im.src=_av(src); o.img=im; }
   return o;
 }
 // ---- プリローダー（全アセット読込後にタイトル表示。最初のチラつき防止）----
