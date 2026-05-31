@@ -379,6 +379,7 @@ function shootP(x,y,dir,charge){
   pBullets.push({x,y,w:charge?13:8,h:charge?13:5,vx:dir*(charge?6.5:8),dmg:charge?3:1,charge,life:90});
   spawnFx('muzzle', x+dir*4, y+(charge?6:2), dir);
   sfx(charge?'chargeshot':'shoot');
+  player.fireHold=18;   // 発射後しばらく腕を前方に伸ばしたまま保持（連射/走り撃ちで引っ込まない）
 }
 function shootE(x,y,vx,vy,c='#ff5a4a'){ eBullets.push({x,y,w:7,h:7,vx,vy,c,life:300}); }
 
@@ -387,11 +388,11 @@ function shootE(x,y,vx,vy,c='#ff5a4a'){ eBullets.push({x,y,w:7,h:7,vx,vy,c,life:
 //======================================================================
 const PW=18, PH=24;
 const player={x:80,y:GROUND_Y-PH,w:PW,h:PH,vx:0,vy:0,dir:1,onGround:false,
-  hp:24,maxhp:24,inv:0,shootCD:0,charge:0,wasShoot:false,
+  hp:24,maxhp:24,inv:0,shootCD:0,charge:0,wasShoot:false,fireHold:0,
   dead:false,deadT:0,coyote:0,jumpBuf:0,anim:0,blink:0};
 function resetPlayer(){
   Object.assign(player,{x:80,y:GROUND_Y-PH,vx:0,vy:0,dir:1,onGround:false,
-    hp:24,maxhp:24,inv:0,shootCD:0,charge:0,wasShoot:false,
+    hp:24,maxhp:24,inv:0,shootCD:0,charge:0,wasShoot:false,fireHold:0,
     dead:false,deadT:0,coyote:0,jumpBuf:0,anim:0,blink:0});
 }
 
@@ -449,6 +450,7 @@ function updatePlayer(){
   if(sh && player.charge>=8) chargeSnd(true, player.charge/60); else chargeSnd(false); // チャージ中のうなり(タップでは鳴らさない)
 
   if(player.inv>0)player.inv--;
+  if(player.fireHold>0)player.fireHold--;
   player.blink++;
 
   if(player.y>H+60) hurt(99,true);  // 落下死
@@ -873,7 +875,7 @@ function drawPlayer(){
   if(player.inv>0 && Math.floor(player.blink/3)%2===0 && !player.dead) return;
   if(player.dead){ return; }
   // 状態を脚と腕で独立に決める＝走り撃ち時は脚run+腕fireで“腕だけ伸ばしっぱなし”
-  const onG=player.onGround, mvg=Math.abs(player.vx)>0.1, firing=player.shootCD>5;
+  const onG=player.onGround, mvg=Math.abs(player.vx)>0.1, firing=player.fireHold>0;   // 発射保持中は腕を伸ばしたまま
   const legState = !onG ? 'jump' : mvg ? 'run' : (player.inv>56?'hurt':'idle');
   const armState = (player.charge>=8) ? 'charge' : firing ? 'fire' : 'down';
   const legFrame = legState==='run' ? Math.floor(player.anim) : 0;
