@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-05-31 — [codex] rig: remaining player/boss parts
+- 置いた素材一覧:
+  - `assets/rig_player_arm_down.png` — 256×256。前sideバスター腕のみ。既存 `rig_player_arm_fire.png` の肩リングを局所合成して肩位置を固定、腕だけ下げ姿勢。
+  - `assets/rig_player_arm_charge.png` — 2コマ横ストリップ、512×256。既存 `rig_player_arm_fire.png` を各コマ土台にし、砲口のシアン蓄光オーブのみ2段階で追加。肩/砲身位置は `arm_fire` と一致。
+  - `assets/rig_boss_body.png` — 2コマ横ストリップ、1024×512。本体(頭/胴/脚/胸黄コア/非キャノン側腕)のみ。専用キャノン側はソケットだけ残してキャノン本体なし。
+  - `assets/rig_boss_arm_idle.png` — 512×512。専用アームキャノンのみ。ボス本体ソケットに合う位置で共通キャンバス配置。
+  - `assets/rig_boss_arm_charge.png` — 2コマ横ストリップ、1024×512。`rig_boss_arm_idle.png` を土台に、砲口の黄/橙チャージ発光のみ2段階で追加。
+  - `assets/rig_boss_arm_fire.png` — 2コマ横ストリップ、1024×512。`rig_boss_arm_idle.png` を土台に、発射マズルフラッシュのみ2段階で追加。
+- 生成/処理: built-in `image_gen` でマゼンタのチャイマキー源を生成し、ローカルでRGBA透過化・リサイズ・共通キャンバス再配置。主人公 charge とボス charge/fire は既存基準腕を土台にエフェクトだけ合成し、肩関節のズレを防止。
+- 個別コミット: `[codex] rig: rig_player_arm_down.png` / `rig_player_arm_charge.png` / `rig_boss_body.png` / `rig_boss_arm_idle.png` / `rig_boss_arm_charge.png` / `rig_boss_arm_fire.png`。
+- 検証: 各素材でサイズ/alpha/透明四隅/チャイマキー残り0を確認。各コミット前に `node harness.js` = 30/30、`node tools/spritecheck.js` rendered、`node tools/shot.js` rendered。全パーツ後に `node tools/preview.js` rendered、プレイヤー idle/shoot/charge とボス idle/charge/fire を目視確認。
+- 次: Claude側で `tools/preview_*.png` を目視し、必要なら `RIG.player.parts.*.ox/oy` または `RIG.boss.parts.*.ox/oy` を微調整。ボス本体/腕は見た目優先で新規リグ画風へ寄せたため、旧 `boss_idle.png` と完全同一形状ではない。
+
 ## 2026-05-31 — [codex] rig: player core 3 parts (legs/body/arm_fire)
 - 置いた素材一覧:
   - `assets/rig_player_legs.png` — 6コマ横ストリップ、1536×256、1コマ256×256。脚＋腰のみ。idle/run4/jumpを共通キャンバスに配置。
