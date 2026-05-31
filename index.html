@@ -885,9 +885,9 @@ const SKEL = {
   torso: {src:'assets/skel_torso.png', bw:18, bh:22.5},
   thigh: {src:'assets/skel_thigh.png', bw:9.6, bh:8.0},
   shin:  {src:'assets/skel_shin.png',  bw:8.6, bh:9.6},
-  uarm:  {src:'assets/skel_uarm.png',  bw:6.6, bh:6.2},
+  uarm:  {src:'assets/skel_uarm.png',  bw:7.2, bh:6.4},
   farm:  {src:'assets/skel_farm.png',  bw:7.4, bh:8.2},
-  buster:{src:'assets/skel_buster.png',bw:9.6, bh:9.0},
+  buster:{src:'assets/skel_buster.png',bw:8.2, bh:8.4},
 };
 function loadSkel(){
   if(typeof Image==='undefined') return;
@@ -953,12 +953,13 @@ function drawPlayerSkel(footX, footY, dir){
     thN=r?0.55:0.25; thF=r?-0.18:0.05; knN=r?0.95:0.45; knF=r?0.6:0.3; lean=0.18; bob=-0.6;
   } else { thN=0.08; thF=-0.08; knN=0.10; knF=0.10; bob=Math.sin(player.blink*0.05)*0.4; }
   let shN,elN,shF,elF;
-  if(firing||charging){ shN=1.52; elN=0.0; }
+  if(firing||charging){ shN=1.46; elN=0.0; }            // バスター前方やや水平。撃つときは起き上がって構える(下のlean調整)
   else if(st==='run'){ shN=0.6*Math.sin(ph+Math.PI)+0.30; elN=0.7; }
   else if(st==='jump'){ shN=0.85; elN=0.4; }
   else { shN=0.30; elN=0.6; }
   if(st==='run'){ shF=0.6*Math.sin(ph)+0.20; elF=0.7; }
   else if(st==='jump'){ shF=-0.25; elF=0.5; } else { shF=0.22; elF=0.6; }
+  if((firing||charging) && st==='run'){ lean*=0.45; bob*=0.5; }   // 撃つ間は前傾を抑えて起き上がり、バスターを安定して前へ構える
 
   const TH=7, SH=8, UA=5, FA=7;
   const hipY=footY-14+bob, shoY=footY-25+bob, hipX=footX+lean*3, shoX=footX+lean*9;
