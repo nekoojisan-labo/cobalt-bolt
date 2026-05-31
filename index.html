@@ -983,7 +983,17 @@ function drawPlayerSkel(footX, footY, dir){
     _limb(hx+3,hy-2,2.3,7,2.6,CY,WH);
   }
   drawSkelLeg(hipX+1.2,hipY,thN,knN,TH,SH,B,BH, SK?SKEL.thigh:null, SK?SKEL.shin:null);                    // 手前脚
-  drawSkelArm(shoX+2,shoY,shN,elN,UA,FA,B,BH,true,firing,charging, SK?SKEL.uarm:null, SK?SKEL.buster:null); // 手前腕(バスター)
+  // 手前腕: 射撃/チャージ中は「1本につながった伸ばしバスター腕」で前方へ構える(組み立て感を消す)。それ以外は骨格の腕を振る
+  if((firing||charging) && RIG.player.parts.arm_fire.ready){
+    const ap=RIG.player.parts.arm_fire, SC=0.118, iw=ap.img.width, ih=ap.img.height, dw=iw*SC, dh=ih*SC;
+    ctx.drawImage(ap.img,0,0,iw,ih, shoX+2 - dw*(90/256), shoY-1 - dh*(98/256), dw, dh);   // 肩ボールを肩に合わせ前方へ伸ばす
+    if(charging){
+      const muzx=shoX+2 + dw*(145/256), muzy=shoY-1, co=getImg(BULLET_SPR.charge.src), osz=(player.charge>=40?8:5+(player.charge/40)*3);
+      if(co&&co.ready&&co.img){ const fw=co.img.width/(BULLET_SPR.charge.frames||1); ctx.drawImage(co.img,0,0,fw,co.img.height, muzx-osz/2, muzy-osz/2, osz, osz); }
+    }
+  } else {
+    drawSkelArm(shoX+2,shoY,shN,elN,UA,FA,B,BH,true,firing,charging, SK?SKEL.uarm:null, SK?SKEL.buster:null); // 手前腕(バスター)
+  }
   ctx.restore();
 }
 
