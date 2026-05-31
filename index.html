@@ -172,6 +172,7 @@ const ASSETS = {
     idle  :{src:'assets/player_idle.png',  frames:5, fps:6},
     run   :{src:'assets/player_run.png',   frames:8, fps:14},
     jump  :{src:'assets/player_jump.png',  frames:2, fps:6},
+    jumpshoot:{src:'assets/player_jumpshoot.png', frames:2, fps:6},
     shoot :{src:'assets/player_shoot.png', frames:2, fps:14},
     charge:{src:'assets/player_charge.png',frames:5, fps:12},
     hurt  :{src:'assets/player_hurt.png',  frames:2, fps:10},
@@ -886,7 +887,7 @@ function drawPlayer(){
   // プレイヤーは全状態を塗り一枚絵(player_*)で統一＝走りと走り撃ちで脚モーションが一致(歩きに変わらない)。
   //  走り撃ちは player_run と脚が同一で腕だけ前方に伸ばした player_runshoot を使用(fireHoldで保持)。
   const _anim = legState==='hurt' ? 'hurt'
-    : legState==='jump' ? 'jump'
+    : legState==='jump' ? (armState==='fire' && ASSETS.player.anims.jumpshoot ? 'jumpshoot' : 'jump')
     : legState==='run'  ? (armState==='fire' && ASSETS.player.anims.runshoot ? 'runshoot' : 'run')
     : armState==='fire' ? 'shoot'
     : armState==='charge'? 'charge'
