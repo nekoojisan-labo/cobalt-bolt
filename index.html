@@ -960,6 +960,7 @@ function drawPlayerSkel(footX, footY, dir){
   if(st==='run'){ shF=0.6*Math.sin(ph)+0.20; elF=0.7; }
   else if(st==='jump'){ shF=-0.25; elF=0.5; } else { shF=0.22; elF=0.6; }
   if((firing||charging) && st==='run'){ lean*=0.45; bob*=0.5; }   // 撃つ間は前傾を抑えて起き上がり、バスターを安定して前へ構える
+  if(firing||charging){ shF=-0.05; elF=1.05; }                    // 撃つ間は奥腕を振らずに下げて固定(振り腕とバスターが別々に見える=人型崩れを防ぐ)
 
   const TH=7, SH=8, UA=5, FA=7;
   const hipY=footY-14+bob, shoY=footY-25+bob, hipX=footX+lean*3, shoX=footX+lean*9;
