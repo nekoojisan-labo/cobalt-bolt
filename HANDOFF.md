@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-05-31 — [codex] char: 主人公run自然化とrunshoot再派生
+- 実施:
+  - `assets/player_run.png` を8コマ/2048×256のまま作り直し。既存の高精細ボディを基準に、姿勢を起こしたアスリート寄りの走りへ変更。右脚前→通過→左脚前→通過の2歩サイクルで接地を交互化し、両腕も脚と逆位相で前後スイングするようにした。マズル/射撃FXは無し。
+  - `assets/player_runshoot.png` を新しいrunと同じサイクルから再派生。脚・胴・接地変換はrunと同一で、前sideのバスター腕だけ水平射撃姿勢＋シアン砲口発光へ固定。もう一方の腕と脚の交互運動はrun継承。
+- 検証:
+  - 両PNGとも `2048×256` / 8コマ / RGBA alpha `(0,255)` / 透明四隅OK。`player_run.png` は全コマ下端 `y=235` で接地統一。
+  - `player_runshoot.png` は `player_run.png` に対して足元帯 `y>=210` の差分0、下半身帯 `y>=190` の差分0。脚・接地は1pxもズレなし。
+  - 目視: `tools/preview_new_player_run_grid.png` / `tools/preview_new_player_runshoot_grid.png` で脚の左右交互接地と腕の逆位相スイングを確認。
+  - コマンド: 各コミット前に `node harness.js` = 30/30、`node tools/spritecheck.js` rendered、`node tools/shot.js` rendered。
+- コミット: `35ae57d` `[codex] char: player_run.png 自然なランサイクルに` / `12604ff` `[codex] char: player_runshoot.png 再派生`
+- 次: Claude側でブラウザ実機表示のラン/走り撃ちループを確認。必要なら見た目だけ微調整（当たり判定・idle/jump/chargeは変更なし）。
+
 ## 2026-05-31 — [codex] char: 主人公武器バリアントを既存ベース派生で再作成
 - 実施:
   - `assets/player_runshoot.png` を `player_run.png`(8コマ/2048×256)土台で再作成。前sideの既存バスター腕領域だけを消し、水平バスター腕＋シアン砲口発光を上書き合成。脚・胴・接地はrun由来。
