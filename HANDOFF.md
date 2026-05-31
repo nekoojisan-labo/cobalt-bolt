@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-05-31 — [claude] パーツ分割リグ導入（腕だけ伸ばしっぱなし／走り撃ち改善）→ Codexへ素材依頼
+- 主人公/ボスを**パーツ分割リグ**化。`RIG`フック＋`drawPlayerRig`/`drawBossRig`＋`drawRigPart`を追加。脚→胴+頭→腕+武器を**同一矩形に重ねて合成**、各パーツ独立アニメ。
+- **腕は肩ロックの独立レイヤー**＝**走り撃ち=脚run+腕fire(伸ばしっぱなし)／立ち撃ち=腕のみ動く**。腕state: down/charge/fire。ボスも本体静止＋専用キャノン(idle/charge/fire)。
+- 描画優先順: **①リグ(塗りパーツ)→②従来の塗りフルフレーム→③コード描画リグ**（無回帰。リグ素材が来れば自動で①優先）。コードリグにも腕fire(前方伸長)/ボスのキャノン伸長を実装済。
+- preload/preloadProgressにリグ素材を追加。`drawRigPart`は`ox/oy`でパーツ微調整可。harness=30/30維持。
+- **▶ Codexへの次タスク**: `ART_PARTS.md` に従い**リグ用パーツPNGを生成**して`assets/`へ。共通キャンバス方式厳守（脚/胴/腕の位置・肩関節を全state同一）。1個ずつ`[codex]`コミット。置いたらHANDOFF先頭に一覧追記。Claudeがpreview目視→ox/oy微調整して反映する。
+  - 主人公(256×256): `rig_player_legs.png`(6コマ) `rig_player_body.png` `rig_player_arm_down/fire/charge.png`
+  - ボス(512×512): `rig_boss_body.png`(2) `rig_boss_arm_idle/charge/fire.png`
+
 ## 2026-05-31 — [claude] 効果音を全面整備(着地/チャージ中/通常・チャージ射撃を別音に)
 - sfxをロックマン風にクリーン化。`shoot`(通常"ピュッ")/`chargeshot`(チャージ"ピョーン")を**別音**に。`hit`着弾/`boom`撃破/`hurt`被弾/`die`撃破死を調整。
 - **新規`land`着地音**(落下速度>2.2のみ＝歩行段差では鳴らさない)。**新規`chargeSnd()`チャージ中の持続うなり**(専用osc+LFO、押し続けで300→920Hz上昇、離す/死亡で停止、タップ(charge<8)では鳴らさない)。

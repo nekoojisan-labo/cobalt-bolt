@@ -209,6 +209,7 @@ function loadAssets(){
       const im=new Image(); an.ready=false; an.settled=false; im.onload=()=>{an.ready=true;an.settled=true;}; im.onerror=()=>{an.settled=true;}; im.src=an.src; an.img=im;
     }
   }
+  loadRig();   // パーツ分割リグの素材も読み込む
 }
 // 足元(底辺中央)のスクリーン座標 footX/footY に、anim の現在コマを描く。dir<0で反転。
 function drawSheet(key, anim, time, footX, footY, dir){
@@ -223,6 +224,69 @@ function drawSheet(key, anim, time, footX, footY, dir){
   if(dir<0){ ctx.translate(dx+w,0); ctx.scale(-1,1); ctx.drawImage(an.img, sxp,syp,fw,fh, 0,dy, w,h); }
   else ctx.drawImage(an.img, sxp,syp,fw,fh, dx,dy, w,h);
   ctx.restore();
+  return true;
+}
+
+//======================================================================
+//  パーツ分割リグ（任意・塗りPNGが揃えば優先／無ければコード描画リグへ）
+//  設計: 各パーツは「フルボディ共通キャンバス(fw×fh)に該当パーツのみ描画・他は透過」。
+//  脚→胴+頭→腕+武器 の順で同一矩形に重ねるとキャラが再構成される。各パーツを
+//  独立に差し替え/アニメできるので、走り撃ち=脚run+腕fireで“腕だけ伸ばしっぱなし”。
+//  共通キャンバス基準なので別々生成でも肩・接地の位置が自動で揃う。
+//======================================================================
+const RIG = {
+  player:{ fw:256, fh:256, scale:0.17, ax:0.5, ay:0.99, parts:{
+    legs:      {src:'assets/rig_player_legs.png',      frames:6},  // 横ストリップ [0]idle/1-4 run/5 jump
+    body:      {src:'assets/rig_player_body.png',      frames:1},  // 胴+頭+ヘルメット(静止)
+    arm_down:  {src:'assets/rig_player_arm_down.png',  frames:1},  // 待機の腕(下げ)
+    arm_fire:  {src:'assets/rig_player_arm_fire.png',  frames:1},  // 前方へ伸ばした射撃腕
+    arm_charge:{src:'assets/rig_player_arm_charge.png',frames:2},  // チャージ保持の腕
+  }, legMap:{ idle:[0], run:[1,2,3,4], jump:[5], hurt:[0] } },
+  boss:{ fw:512, fh:512, scale:0.135, ax:0.5, ay:1, parts:{
+    body:      {src:'assets/rig_boss_body.png',      frames:2},    // 本体(浮遊/呼吸)
+    arm_idle:  {src:'assets/rig_boss_arm_idle.png',  frames:1},    // 専用キャノン(構え)
+    arm_charge:{src:'assets/rig_boss_arm_charge.png',frames:2},    // 溜め
+    arm_fire:  {src:'assets/rig_boss_arm_fire.png',  frames:2},    // 発射
+  } },
+};
+function loadRig(){
+  if(typeof Image==='undefined') return;
+  for(const k in RIG){ const r=RIG[k];
+    for(const pn in r.parts){ const p=r.parts[pn]; if(!p.src) continue;
+      const im=new Image(); p.ready=false; p.settled=false;
+      im.onload=()=>{p.ready=true;p.settled=true;}; im.onerror=()=>{p.settled=true;}; im.src=p.src; p.img=im;
+    }
+  }
+}
+// 1パーツ(frame f)を共通キャンバス基準で footX/footY(底辺中央)へ描く。dir<0で反転。
+function drawRigPart(rig, part, f, footX, footY, dir){
+  if(!part||!part.ready||!part.img||!ctx) return;
+  const fw=rig.fw, fh=rig.fh, sc=rig.scale, w=fw*sc, h=fh*sc, n=part.frames||1;
+  const fi=((Math.floor(f)%n)+n)%n, sxp=fi*fw;
+  const dx=Math.round(footX - w*rig.ax + (part.ox||0)), dy=Math.round(footY - h*rig.ay + (part.oy||0));  // ox/oyでパーツ毎に微調整可
+  if(dir<0){ ctx.save(); ctx.translate(dx+w,0); ctx.scale(-1,1); ctx.drawImage(part.img,sxp,0,fw,fh,0,dy,w,h); ctx.restore(); }
+  else ctx.drawImage(part.img,sxp,0,fw,fh,dx,dy,w,h);
+}
+// プレイヤーをパーツ合成。必須(脚+胴)が揃わなければ false→コード描画へ。
+function drawPlayerRig(legState, armState, legFrame, armFrame, footX, footY, dir){
+  const r=RIG.player, P=r.parts;
+  if(!P.legs.ready || !P.body.ready) return false;
+  const armKey = armState==='charge'?'arm_charge' : armState==='fire'?'arm_fire' : 'arm_down';
+  const arm = P[armKey] && P[armKey].ready ? P[armKey] : (P.arm_down.ready?P.arm_down:null);
+  const lf = r.legMap[legState] || r.legMap.idle;
+  drawRigPart(r, P.legs, lf[legFrame%lf.length], footX, footY, dir);  // 脚(奥)
+  drawRigPart(r, P.body, 0, footX, footY, dir);                       // 胴+頭
+  if(arm) drawRigPart(r, arm, armFrame, footX, footY, dir);           // 腕+バスター(前)
+  return true;
+}
+// ボスをパーツ合成。必須(本体)が無ければ false→コード描画へ。
+function drawBossRig(armState, footX, footY, dir, t){
+  const r=RIG.boss, P=r.parts;
+  if(!P.body.ready) return false;
+  const armKey = armState==='charge'?'arm_charge' : armState==='fire'?'arm_fire' : 'arm_idle';
+  const arm = P[armKey] && P[armKey].ready ? P[armKey] : (P.arm_idle.ready?P.arm_idle:null);
+  drawRigPart(r, P.body, t*0.08, footX, footY, dir);                  // 本体(奥)
+  if(arm) drawRigPart(r, arm, t*0.12, footX, footY, dir);            // キャノン(前)
   return true;
 }
 
@@ -252,6 +316,7 @@ function preloadAll(){
 function preloadProgress(){
   let total=0, done=0;
   for(const k in ASSETS){ const a=ASSETS[k]; for(const n in (a.anims||{})){ const an=a.anims[n]; if(!an.src)continue; total++; if(an.settled)done++; } }
+  for(const k in RIG){ const r=RIG[k]; for(const pn in r.parts){ const p=r.parts[pn]; if(!p.src)continue; total++; if(p.settled)done++; } }
   if(_preloadList) for(const s of _preloadList){ total++; const r=_imgreg[s]; if(r&&r.settled)done++; }
   return total? done/total : 1;
 }
@@ -806,45 +871,61 @@ function drawSolids(){ for(const s of solids){ if(s.x+s.w<camX||s.x>camX+W)conti
 function drawPlayer(){
   if(player.inv>0 && Math.floor(player.blink/3)%2===0 && !player.dead) return;
   if(player.dead){ return; }
-  // 高精細スプライトがあれば優先（無ければ下のコード描画にフォールバック）
-  const _mv=Math.abs(player.vx)>0.1, _sh=player.shootCD>5;
-  const _anim = player.inv>56 ? 'hurt'
-    : !player.onGround ? 'jump'
-    : _mv ? (_sh && ASSETS.player.anims.runshoot ? 'runshoot' : 'run')  // 走り撃ち（素材あれば）
-    : _sh ? 'shoot'
-    : player.charge>0 ? 'charge'
+  // 状態を脚と腕で独立に決める＝走り撃ち時は脚run+腕fireで“腕だけ伸ばしっぱなし”
+  const onG=player.onGround, mvg=Math.abs(player.vx)>0.1, firing=player.shootCD>5;
+  const legState = !onG ? 'jump' : mvg ? 'run' : (player.inv>56?'hurt':'idle');
+  const armState = (player.charge>=8) ? 'charge' : firing ? 'fire' : 'down';
+  const legFrame = legState==='run' ? Math.floor(player.anim) : 0;
+  const armFrame = armState==='charge' ? Math.floor(player.blink/4) : 0;
+  const footX = player.x-camX+player.w/2, footY = player.y+player.h;
+  // ① 塗りパーツ(リグ)が揃えば最優先で合成（走り撃ち=脚run+腕fire）
+  if(drawPlayerRig(legState, armState, legFrame, armFrame, footX, footY, player.dir)) return;
+  // ② リグ素材が未配置の間は従来の高精細フルフレームで（来れば①が優先）
+  const _anim = legState==='hurt' ? 'hurt'
+    : legState==='jump' ? 'jump'
+    : legState==='run'  ? (armState==='fire' && ASSETS.player.anims.runshoot ? 'runshoot' : 'run')
+    : armState==='fire' ? 'shoot'
+    : armState==='charge'? 'charge'
     : 'idle';
-  if(drawSheet('player', _anim, player.blink, player.x-camX+player.w/2, player.y+player.h, player.dir)) return;
+  if(drawSheet('player', _anim, player.blink, footX, footY, player.dir)) return;
+  // ===== ③ コード描画リグ（最終フォールバック・各パーツ独立）=====
   const x=Math.round(player.x-camX), y=Math.round(player.y), d=player.dir;
   ctx.save();
   if(d<0){ctx.translate(x+player.w,y);ctx.scale(-1,1);} else ctx.translate(x,y);
   // ===== パレット =====
   const O='#0a1024', B='#2f6df0', BL='#173c88', BH='#6aa6ff', CY='#bfe6ff',
         SK='#ffd1a0', SKL='#ffe6c8', EY='#12204e', WH='#ffffff';
-  const run = player.onGround && Math.abs(player.vx)>0.1;
-  const fr  = run ? Math.floor(player.anim)%2 : -1;
-  const bob = (!run && player.onGround) ? Math.floor(player.blink/26)%2 : 0;   // 待機の呼吸
-  const blink = (!run && player.onGround && Math.floor(player.blink/70)%9===0);
-  // ===== 脚（歩行アニメ）=====
-  if(!run){
+  const bob = (legState==='idle') ? Math.floor(player.blink/26)%2 : 0;   // 待機の呼吸
+  const blink = (legState==='idle' && Math.floor(player.blink/70)%9===0);
+  // ===== 脚（legStateで独立アニメ）=====
+  if(legState==='run'){
+    if(legFrame%2===0){
+      px(1,17,15,9,O); px(2,18,4,5,BL); px(11,18,4,4,BL); px(2,18,4,2,B); px(11,18,4,2,B);
+      px(1,23,6,2,CY); px(12,22,5,2,CY);
+    }else{
+      px(3,17,15,9,O); px(4,18,4,4,BL); px(10,18,4,5,BL); px(4,18,4,2,B); px(10,18,4,2,B);
+      px(4,22,5,2,CY); px(11,23,6,2,CY);
+    }
+  }else if(legState==='jump'){
+    px(3,16,13,10,O); px(4,17,4,6,BL); px(9,17,4,6,BL); px(4,17,4,2,B); px(9,17,4,2,B);
+    px(4,22,5,2,CY); px(9,22,5,2,CY);
+  }else{   // idle / hurt
     px(2,17,15,9,O); px(3,18,4,5,BL); px(10,18,4,5,BL); px(3,18,4,2,B); px(10,18,4,2,B);
     px(2,23,6,2,CY); px(10,23,6,2,CY);
-  }else if(fr===0){
-    px(1,17,15,9,O); px(2,18,4,5,BL); px(11,18,4,4,BL); px(2,18,4,2,B); px(11,18,4,2,B);
-    px(1,23,6,2,CY); px(12,22,5,2,CY);
-  }else{
-    px(3,17,15,9,O); px(4,18,4,4,BL); px(10,18,4,5,BL); px(4,18,4,2,B); px(10,18,4,2,B);
-    px(4,22,5,2,CY); px(11,23,6,2,CY);
   }
   // ===== 胴（bobで1px上下）=====
   const by=10+bob;
   px(3,by-1,13,11,O); px(4,by,11,9,B); px(4,by,11,3,BH); px(4,by+7,11,2,BL); px(4,by,2,9,BH);
   px(7,by+2,5,5,CY); px(8,by+3,3,3,WH);
-  // ===== 腕・バスター =====
+  // ===== 腕・バスター（armStateで独立）=====
   const ay=by+2;
-  if(player.charge>0){
+  if(armState==='charge'){
     const cc=player.charge>=40?(Math.floor(player.blink/2)%2?'#eafcff':'#9fe6ff'):'#7fc4ff';
     px(14,ay-1,12,9,O); px(15,ay,9,7,cc); px(24,ay+1,2,5,cc); px(16,ay+1,5,2,WH);
+  }else if(armState==='fire'){
+    // 前方へ伸ばした射撃腕（走り撃ち中も維持＝動かすのは腕のみ）
+    px(14,ay-1,16,8,O); px(15,ay,13,6,B); px(15,ay,13,2,BH); px(15,ay+4,13,2,BL);
+    px(27,ay,4,6,'#0e2a66'); px(28,ay+1,3,4,CY); px(29,ay+2,2,2,WH);
   }else{
     px(14,ay-1,11,8,O); px(15,ay,8,6,B); px(15,ay,8,2,BH); px(15,ay+4,8,2,BL);
     px(22,ay+1,3,4,'#0e2a66'); px(23,ay+2,2,2,'#3a6ad0');
@@ -903,7 +984,11 @@ function drawBoss(){
     if(drawSheet('boss','death', boss.deadT, boss.x-camX+boss.w/2, boss.y+boss.h, boss.dir)) return;
     return;
   }
-  // 高精細スプライト優先（state→アニメ）
+  // 武器の状態（専用キャノン）：溜め→発射で腕(キャノン)のみ動かす
+  const bArm = boss.state==='shoot' ? (boss.timer<18?'charge':'fire') : 'idle';
+  // ① パーツ分割リグ（本体+専用キャノン）が揃えば優先
+  if(drawBossRig(bArm, boss.x-camX+boss.w/2, boss.y+boss.h, boss.dir, boss.timer)) return;
+  // ② 高精細フルフレーム → ③ コード描画
   const _bs = boss.state==='shoot'?'shoot' : boss.state==='dash'?'dash' : boss.state==='jump'?'jump' : 'idle';
   if(drawSheet('boss', _bs, boss.timer, boss.x-camX+boss.w/2, boss.y+boss.h, boss.dir)) return;
   ctx.save();
@@ -917,8 +1002,15 @@ function drawBoss(){
   // --- 胴 ---
   px(5,16,28,24,C); px(5,16,28,4,HL); px(5,34,28,4,C2);
   px(11,21,16,12,'#3a0a05'); px(12,22,14,10,'#ffd23f'); px(15,24,8,6,'#ff7a00'); px(13,23,3,3,'#ffe88a'); // 胸コア
-  // --- 腕／キャノン ---
-  px(28,18,10,12,C2); px(28,18,10,3,HL); px(36,20,5,8,'#222'); px(0,20,7,10,C2);
+  // --- 腕／専用キャノン（bArmで独立：構え/溜め/発射）---
+  px(0,20,7,10,C2);   // 反対側の小腕
+  if(bArm==='fire'){
+    px(28,16,17,14,C2); px(28,16,17,3,HL); px(44,18,5,10,'#222'); px(45,20,5,6,'#ffd23f'); px(49,21,3,4,'#fff'); // 砲身伸長+マズル
+  }else if(bArm==='charge'){
+    px(28,18,11,12,C2); px(28,18,11,3,HL); px(37,19,6,9,'#3a0a05'); px(39,21,3,5,Math.floor(boss.timer/3)%2?'#ffe88a':'#ff7a00'); // 溜めコア
+  }else{
+    px(28,18,10,12,C2); px(28,18,10,3,HL); px(36,20,5,8,'#222');
+  }
   // --- 頭 ---
   px(9,2,20,15,C); px(9,2,20,4,HL); px(13,7,5,5,'#fff'); px(20,7,5,5,'#fff'); px(14,8,3,3,'#ff1a1a'); px(21,8,3,3,'#ff1a1a');
   px(11,0,4,4,'#ffd23f'); px(23,0,4,4,'#ffd23f'); px(15,13,8,2,'#3a0a05');
