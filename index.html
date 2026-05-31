@@ -173,13 +173,13 @@ const ASSETS = {
   // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
   player:{ fw:256, fh:256, scale:0.16, ax:0.5, ay:0.98, anims:{
     idle  :{src:'assets/player_idle.png',  frames:5, fps:6},
-    run   :{src:'assets/player_run.png',   frames:8, fps:14},
+    run   :{src:'assets/player_run.png',   frames:8, fps:18},
     jump  :{src:'assets/player_jump.png',  frames:2, fps:6},
     jumpshoot:{src:'assets/player_jumpshoot.png', frames:2, fps:6},
     shoot :{src:'assets/player_shoot.png', frames:2, fps:14},
     charge:{src:'assets/player_charge.png',frames:5, fps:12},
     hurt  :{src:'assets/player_hurt.png',  frames:2, fps:10},
-    runshoot:{src:'assets/player_runshoot.png', frames:8, fps:14},  // 走り撃ち
+    runshoot:{src:'assets/player_runshoot.png', frames:8, fps:18},  // 走り撃ち(runと同テンポ)
   }},
   met:{ fw:128, fh:128, scale:0.22, ax:0.5, ay:1, anims:{
     hide:{src:'assets/enemy_met_hide.png', frames:1, fps:1},
@@ -216,12 +216,12 @@ function loadAssets(){
   loadRig();   // パーツ分割リグの素材も読み込む
 }
 // 足元(底辺中央)のスクリーン座標 footX/footY に、anim の現在コマを描く。dir<0で反転。
-function drawSheet(key, anim, time, footX, footY, dir){
+function drawSheet(key, anim, time, footX, footY, dir, frame){
   const a=ASSETS[key]; if(!a || !ctx) return false;
   let an=a.anims[anim]; if(!an || !an.ready) an=a.anims.idle;   // 無ければidleで代用
   if(!an || !an.ready || !an.img) return false;
   const fw=a.fw, fh=a.fh, sc=a.scale||1, w=fw*sc, h=fh*sc, n=an.frames||1;
-  const f=(an.fps ? Math.floor(time*an.fps/60)%n : 0);
+  const f=(frame!=null ? (((frame%n)+n)%n) : (an.fps ? Math.floor(time*an.fps/60)%n : 0));  // frame指定時は固定(ジャンプの揺れ防止)
   const sxp=f*fw, syp=0;
   const dx=Math.round(footX - w*(a.ax!=null?a.ax:0.5)), dy=Math.round(footY - h*(a.ay!=null?a.ay:1));
   ctx.save();
@@ -895,7 +895,9 @@ function drawPlayer(){
     : armState==='fire' ? 'shoot'
     : armState==='charge'? 'charge'
     : 'idle';
-  if(drawSheet('player', _anim, player.blink, footX, footY, player.dir)) return;
+  // ジャンプは上下速度でフレーム固定(上昇=0/下降=1)＝2絵が高速交互に揺れるのを防ぐ
+  const _ovr = (legState==='jump') ? (player.vy < 0 ? 0 : 1) : null;
+  if(drawSheet('player', _anim, player.blink, footX, footY, player.dir, _ovr)) return;
   // ===== ③ コード描画リグ（最終フォールバック・各パーツ独立）=====
   const x=Math.round(player.x-camX), y=Math.round(player.y), d=player.dir;
   ctx.save();
