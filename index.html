@@ -881,11 +881,9 @@ function drawPlayer(){
   const legFrame = legState==='run' ? Math.floor(player.anim) : 0;
   const armFrame = armState==='charge' ? Math.floor(player.blink/4) : 0;
   const footX = player.x-camX+player.w/2, footY = player.y+player.h;
-  // ① リグは「射撃中＝腕を前方へ伸ばす(fire)」状態のみ使用。
-  //    待機/走り/チャージは全身一枚絵(塗りフルフレーム)の方がバランスが良いのでそちらを使う。
-  //    → 走り撃ちは脚run+腕fireのリグ(腕を伸ばしっぱなし)、それ以外はバランスの取れた塗り。
-  if(armState==='fire' && drawPlayerRig(legState, armState, legFrame, armFrame, footX, footY, player.dir)) return;
-  // ② それ以外（およびリグ未配置時）は従来の高精細フルフレーム
+  // ① 全状態をリグで合成（arm_down自然化で待機/走りもバランス良。走り=動的な脚、走り撃ち=腕fireを保持）
+  if(drawPlayerRig(legState, armState, legFrame, armFrame, footX, footY, player.dir)) return;
+  // ② リグ素材が未配置のときのみ従来の高精細フルフレーム
   const _anim = legState==='hurt' ? 'hurt'
     : legState==='jump' ? 'jump'
     : legState==='run'  ? (armState==='fire' && ASSETS.player.anims.runshoot ? 'runshoot' : 'run')
