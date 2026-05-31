@@ -51,7 +51,7 @@ if(!HEADLESS && typeof window!=='undefined'){
     if(['arrowleft','arrowright','arrowup','arrowdown',' '].includes(k))e.preventDefault();
     if(!keys[k])PRESS[k]=true;
     keys[k]=true;
-    if(!_bgmReady){ _bgmReady=true; primeBgm(); }   // 初回キーで音声アンロック
+    if(!_bgmReady){ _bgmReady=true; primeBgm(); try{_actx();}catch(e){} }   // 初回キーで音声(BGM/SE)アンロック
   });
   addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 }
@@ -64,36 +64,45 @@ const rnd  =(a,b)=>a+Math.random()*(b-a);
 function aabb(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 function px(x,y,w,h,c){ if(!ctx)return; ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),w,h); }
 
-// ---------- 効果音（assets配置で音声ファイル優先・無ければWebAudioシンセ） ----------
-const SFX_SRC = {  // CC0音源(OpenGameArt)。無ければ下のシンセにフォールバック。
-  shoot :'assets/sfx_shoot.mp3',
-  charge:'assets/sfx_charge.mp3',
-  hit   :'assets/sfx_hit.mp3',
-  boom  :'assets/sfx_boom.mp3',
-  hurt  :'assets/sfx_hurt.mp3',
-  jump  :'assets/sfx_jump.mp3',
-  heal  :'assets/sfx_heal.mp3',
-};
+// ---------- 効果音（ロックマン風チップチューン・WebAudio合成） ----------
+const SFX_SRC = {};   // ファイル音源を使う場合のみ 'type':'assets/..' を記述（現状は合成音）
 const _sfxEls={};
-let actx=null;
+let actx=null, _sfxMaster=null;
+function _actx(){
+  if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); _sfxMaster=actx.createGain(); _sfxMaster.gain.value=0.5; _sfxMaster.connect(actx.destination); }catch(e){ return null; } }
+  if(actx.state==='suspended'){ try{actx.resume();}catch(e){} }
+  return actx;
+}
+function _tone(wave,f0,f1,dur,vol,t0,delay){   // 矩形波等の単音(周波数スイープ)
+  const a=actx, t=t0+(delay||0), o=a.createOscillator(), g=a.createGain();
+  o.type=wave; o.frequency.setValueAtTime(f0,t);
+  if(f1&&f1!==f0) o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(_sfxMaster); o.start(t); o.stop(t+dur+0.02);
+}
+function _noise(dur,vol,t0,lp0,lp1,delay){     // ノイズ(爆発/被弾用)
+  const a=actx, t=t0+(delay||0), n=Math.max(1,Math.floor(a.sampleRate*dur));
+  const buf=a.createBuffer(1,n,a.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+  const s=a.createBufferSource(); s.buffer=buf;
+  const f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(lp0||4000,t); if(lp1)f.frequency.exponentialRampToValueAtTime(lp1,t+dur);
+  const g=a.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  s.connect(f); f.connect(g); g.connect(_sfxMaster); s.start(t); s.stop(t+dur+0.02);
+}
 function sfx(type){
   if(HEADLESS) return;
   const src=SFX_SRC[type];
-  if(src && typeof Audio!=='undefined'){
-    try{ if(!_sfxEls[src]){const a=new Audio(src);a.volume=0.55;_sfxEls[src]=a;} const c=_sfxEls[src].cloneNode(); c.volume=0.55; c.play().catch(()=>{}); return; }catch(e){}
-  }
+  if(src && typeof Audio!=='undefined'){ try{ if(!_sfxEls[src]){const e=new Audio(src);e.volume=0.5;_sfxEls[src]=e;} const c=_sfxEls[src].cloneNode(); c.volume=0.5; c.play().catch(()=>{}); return; }catch(e){} }
   try{
-    if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
-    const o=actx.createOscillator(), g=actx.createGain();
-    o.connect(g); g.connect(actx.destination);
-    const t=actx.currentTime;
-    if(type==='shoot'){o.type='square';o.frequency.setValueAtTime(660,t);o.frequency.exponentialRampToValueAtTime(180,t+.12);g.gain.setValueAtTime(.06,t);}
-    else if(type==='charge'){o.type='sawtooth';o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(880,t+.18);g.gain.setValueAtTime(.07,t);}
-    else if(type==='hit'){o.type='square';o.frequency.setValueAtTime(140,t);g.gain.setValueAtTime(.08,t);}
-    else if(type==='boom'){o.type='triangle';o.frequency.setValueAtTime(90,t);o.frequency.exponentialRampToValueAtTime(40,t+.3);g.gain.setValueAtTime(.12,t);}
-    else if(type==='hurt'){o.type='sawtooth';o.frequency.setValueAtTime(200,t);o.frequency.exponentialRampToValueAtTime(60,t+.25);g.gain.setValueAtTime(.1,t);}
-    g.gain.exponentialRampToValueAtTime(.0001,t+.3);
-    o.start(t); o.stop(t+.32);
+    const a=_actx(); if(!a) return; const t=a.currentTime;
+    if(type==='shoot'){ _tone('square',1100,300,0.10,0.16,t); }                 // バスター"ピュン"
+    else if(type==='charge'){ _tone('square',1500,360,0.20,0.18,t); _noise(0.16,0.05,t,3000,400); } // チャージショット
+    else if(type==='hit'){ _tone('square',1700,1300,0.045,0.10,t); }            // 着弾"チッ"
+    else if(type==='boom'){ _noise(0.30,0.18,t,4500,120); _tone('triangle',200,55,0.28,0.10,t); }   // 爆発
+    else if(type==='hurt'){ _tone('square',210,110,0.22,0.16,t); _noise(0.16,0.07,t,1400,300); }     // 被弾(ロックマン風ブザー)
+    else if(type==='die'){ _tone('square',540,80,0.5,0.16,t); _tone('square',440,70,0.5,0.12,t,0.05); _noise(0.45,0.12,t,3200,90); } // 死亡
+    else if(type==='jump'){ _tone('square',360,720,0.09,0.10,t); }              // ジャンプ
+    else if(type==='heal'){ _tone('square',700,700,0.07,0.13,t); _tone('square',1050,1050,0.08,0.13,t,0.08); _tone('square',1500,1500,0.10,0.12,t,0.17); } // 回復チャイム
   }catch(e){}
 }
 
@@ -354,7 +363,7 @@ function hurt(dmg,fall){
   if(player.dead) return;
   if(player.inv>0 && !fall) return;
   player.hp-=dmg; player.inv=72;
-  if(player.hp<=0){player.hp=0;player.dead=true;player.deadT=0;sfx('boom');}
+  if(player.hp<=0){player.hp=0;player.dead=true;player.deadT=0;sfx('die');}  // 死亡音
   else{ sfx('hurt'); if(!fall){player.vy=-3.5;player.vx=-player.dir*2;} }
 }
 
