@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-05-31 — [codex] char: 主人公武器バリアントを既存ベース派生で再作成
+- 実施:
+  - `assets/player_runshoot.png` を `player_run.png`(8コマ/2048×256)土台で再作成。前sideの既存バスター腕領域だけを消し、水平バスター腕＋シアン砲口発光を上書き合成。脚・胴・接地はrun由来。
+  - `assets/player_charge.png` を `player_idle.png`(5コマ/1280×256)土台で再作成。姿勢・脚・胴はidleのまま、水平バスター＋シアン蓄光オーブを5段階で脈動。`ASSETS.player.anims.charge.frames` は5に更新。
+  - 任意分として `assets/player_jumpshoot.png` を `player_jump.png`(2コマ/512×256)土台で作成し、ジャンプ中の射撃時に使う `jumpshoot` フックを追加。
+- 検証:
+  - 各PNGで寸法/コマ数/RGBA alpha/透明四隅/完全な緑・マゼンタキー残り0を確認。
+  - 差分検証: 各ファイルとも `visible_diff_outside_edit_mask=0`。`player_runshoot.png` は `player_run.png` に対して足元接地帯 `foot_contact_diff=0`、走り↔走り撃ちで脚・接地は1pxもズレなし。
+  - コマンド: 各コミット前と最終で `node harness.js` = 30/30、`node tools/spritecheck.js` rendered、`node tools/shot.js` rendered。最終で `node tools/preview.js` rendered、`preview_runshoot_zoom.png` / `preview_charge_zoom.png` を目視。
+- コミット: `ccb58b9` `[codex] char: player_runshoot.png...` / `be321fd` `[codex] char: player_charge.png...` / `32060a8` `[codex] char: player_jumpshoot.png...`
+- 次: Claude側でブラウザ/preview目視確認。必要なら見た目だけ腕の肩位置・砲口FXを微調整（当たり判定変更なし）。
+
 ## 2026-05-31 — [claude] 設計組み直し: 主人公は塗り一系統に統一（リグ混在を撤廃）→ Codexへ派生生成依頼
 - 不整合の根因＝リグと塗りの混在で状態切替時に脚/姿勢が食い違う(走り→走り撃ちが歩きに/待機→チャージで姿勢変化)。
 - **対策**: `drawPlayer`からプレイヤーのリグ呼び出しを撤去し**全状態 `drawSheet`(塗りフルフレーム)に統一**。ボスのみリグ継続。
