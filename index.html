@@ -382,7 +382,7 @@ const hazards=[
 //======================================================================
 const pBullets=[], eBullets=[];
 function shootP(x,y,dir,charge){
-  pBullets.push({x,y,w:charge?13:8,h:charge?13:5,vx:dir*(charge?6.5:8),dmg:charge?3:1,charge,life:90});
+  pBullets.push({x,y,w:charge?13:8,h:charge?13:5,vx:dir*(charge?6.5:8),dmg:charge?5:1,charge,life:90});
   spawnFx('muzzle', x+dir*4, y+(charge?6:2), dir);
   sfx(charge?'chargeshot':'shoot');
   player.fireHold=18;   // 発射後しばらく腕を前方に伸ばしたまま保持（連射/走り撃ちで引っ込まない）
@@ -603,7 +603,7 @@ function updateEnemies(){
 //======================================================================
 let boss=null, bossActive=false, gate=false, warnT=0;
 function spawnBoss(){
-  boss={x:ROOM_X+360,y:GROUND_Y-46,w:36,h:46,hp:30,maxhp:30,vx:0,vy:0,dir:-1,
+  boss={x:ROOM_X+360,y:GROUND_Y-46,w:36,h:46,hp:60,maxhp:60,vx:0,vy:0,dir:-1,
     onGround:false,state:'intro',timer:0,hit:0,jumps:0,dead:false,deadT:0};
   bossActive=true; gate=true; warnT=90;
 }
@@ -1161,8 +1161,10 @@ function hpGauge(){
   px(8,4,12,3,'#ffd23f');
 }
 function bossGauge(){
-  const bx=W-20; px(bx,8,12,boss.maxhp*1.4+8,'#0a0e1a');
-  for(let i=0;i<boss.maxhp;i++){ const yy=10+(boss.maxhp-1-i)*1.4; px(bx+2,yy,8,1.4, i<boss.hp?'#ff7a00':'#0e1530'); }
+  const bx=W-20, H0=52;                       // 固定高さの比例ゲージ(maxhpを増やしても潰れない)
+  px(bx,8,12,H0+8,'#0a0e1a'); px(bx+1,9,10,H0+6,'#16203c');
+  const fh=Math.round(H0*clamp(boss.hp/boss.maxhp,0,1));
+  px(bx+2,10+(H0-fh),8,fh,'#ff7a00'); px(bx+2,10+(H0-fh),8,Math.min(fh,3),'#ffd23f');
   px(bx,4,12,3,'#ff3b3b');
 }
 function drawHUD(){
