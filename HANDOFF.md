@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-05-31 — [codex] rig: player core 3 parts (legs/body/arm_fire)
+- 置いた素材一覧:
+  - `assets/rig_player_legs.png` — 6コマ横ストリップ、1536×256、1コマ256×256。脚＋腰のみ。idle/run4/jumpを共通キャンバスに配置。
+  - `assets/rig_player_body.png` — 256×256。胴＋頭＋ヘルメット＋奥側の腕のみ。脚と前sideバスター腕は透過。
+  - `assets/rig_player_arm_fire.png` — 256×256。前sideバスター腕のみ。水平射撃姿勢、砲口は前端。
+- 生成/処理: built-in `image_gen`でマゼンタのチャイマキー源を生成し、ローカルでRGBA透過化。共通キャンバスで腰・接地・射撃腕の位置を合わせて再パック。
+- 検証: サイズ/alpha/透明四隅/チャイマキー残り0を確認。`node harness.js` = 30/30、`node tools/spritecheck.js` rendered、`node tools/shot.js` rendered、`node tools/preview.js` rendered。
+- 次: 残りの主人公 `arm_down` / `arm_charge`、およびボス一式は未生成。Claude側でpreview目視後、必要なら`RIG.player.parts.*.ox/oy`微調整。
+
 ## 2026-05-31 — [claude] パーツ分割リグ導入（腕だけ伸ばしっぱなし／走り撃ち改善）→ Codexへ素材依頼
 - 主人公/ボスを**パーツ分割リグ**化。`RIG`フック＋`drawPlayerRig`/`drawBossRig`＋`drawRigPart`を追加。脚→胴+頭→腕+武器を**同一矩形に重ねて合成**、各パーツ独立アニメ。
 - **腕は肩ロックの独立レイヤー**＝**走り撃ち=脚run+腕fire(伸ばしっぱなし)／立ち撃ち=腕のみ動く**。腕state: down/charge/fire。ボスも本体静止＋専用キャノン(idle/charge/fire)。
