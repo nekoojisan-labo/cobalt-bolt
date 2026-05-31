@@ -167,7 +167,7 @@ function manageBgm(){            // 毎フレーム呼ぶ（状態に応じてBG
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 // ★キャッシュ無効化: 素材PNGを差し替えたら ASSET_VER を変えると、ブラウザ/CDNが必ず新素材を取得する。
-const ASSET_VER = '2026053105';
+const ASSET_VER = '2026053106';
 function _av(s){ return s + (s.indexOf('?')<0 ? '?v=' : '&v=') + ASSET_VER; }
 const ASSETS = {
   // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
@@ -385,7 +385,7 @@ function shootP(x,y,dir,charge){
   pBullets.push({x,y,w:charge?13:8,h:charge?13:5,vx:dir*(charge?6.5:8),dmg:charge?5:1,charge,life:90});
   spawnFx('muzzle', x+dir*4, y+(charge?6:2), dir);
   sfx(charge?'chargeshot':'shoot');
-  player.fireHold=18;   // 発射後しばらく腕を前方に伸ばしたまま保持（連射/走り撃ちで引っ込まない）
+  player.fireHold=30;   // 発射後この間は射撃ポーズ(腕前方)を保持。連射の合間に元ポーズへ戻らないよう硬直を長めに(約0.5秒)
 }
 function shootE(x,y,vx,vy,c='#ff5a4a'){ eBullets.push({x,y,w:7,h:7,vx,vy,c,life:300}); }
 
