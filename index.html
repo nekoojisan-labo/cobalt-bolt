@@ -95,7 +95,7 @@ function sfx(type){
   if(src && typeof Audio!=='undefined'){ try{ if(!_sfxEls[src]){const e=new Audio(src);e.volume=0.5;_sfxEls[src]=e;} const c=_sfxEls[src].cloneNode(); c.volume=0.5; c.play().catch(()=>{}); return; }catch(e){} }
   try{
     const a=_actx(); if(!a) return; const t=a.currentTime;
-    if(type==='shoot'){ _tone('square',1100,300,0.10,0.16,t); }                 // バスター"ピュン"
+    if(type==='shoot'){ _noise(0.04,0.07,t,7000,2000); _tone('sawtooth',1600,240,0.11,0.15,t); _tone('square',2400,800,0.05,0.06,t); }  // 弾を撃ち出す発射音(シュッ＋下降)
     else if(type==='charge'){ _tone('square',1500,360,0.20,0.18,t); _noise(0.16,0.05,t,3000,400); } // チャージショット
     else if(type==='hit'){ _tone('square',1700,1300,0.045,0.10,t); }            // 着弾"チッ"
     else if(type==='boom'){ _noise(0.30,0.18,t,4500,120); _tone('triangle',200,55,0.28,0.10,t); }   // 爆発
