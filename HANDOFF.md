@@ -1,5 +1,24 @@
 # HANDOFF — Claude ↔ Codex 協働ログ（新しい順に上へ追記）
 
+## 2026-05-31 - [codex] skel: 主人公の骨格アニメ用「塗りパーツ」6枚を生成
+- 生成/配置:
+  - `assets/skel_torso.png` 160x240: 頭+ヘルメット+クレスト+胴+胸コア+腰。上端中央は首/肩側の接続基準線、下端中央は腰(脚付け根)。
+  - `assets/skel_thigh.png` 96x112: 上端中央=股関節、下端=膝。
+  - `assets/skel_shin.png` 96x150: 上端中央=膝、下にすね+足、つま先=右。
+  - `assets/skel_uarm.png` 80x104: 上端中央=肩、下端=肘。
+  - `assets/skel_farm.png` 84x130: 上端中央=肘、下に通常手/非バスター。
+  - `assets/skel_buster.png` 120x150: 上端中央=肘、下端=シアン発光の砲口。
+- 規約: 各四肢/武器パーツは「縦向き・近位関節をキャンバス上端中央」に配置。隣接する膝/肘幅は同系統の太さ・色で揃え、トルソーは仕様どおり下端中央=腰(脚付け根)も維持。
+- 生成/処理: built-in `image_gen` で既存 `assets/player_idle.png` を基準にマゼンタ背景生成し、ローカルでchroma-key除去、RGBA透過PNGへ変換。四隅透明。
+- 検証:
+  - 6ファイルすべて指定寸法ぴったり / RGBA alpha `(0,255)` / 透明四隅OK / マゼンタkey残り `0`。
+  - `node harness.js` = 30/30。
+  - `node tools/spritecheck.js` rendered, `player sprite ready = true`。
+  - `node tools/shot.js` rendered。
+  - `node tools/preview.js` rendered。`tools/skel_contact.png` で6パーツを目視確認。
+- 補助修正: 現行の骨格描画が `ctx.rotate()` を使うため、`tools/shot.js` / `tools/spritecheck.js` のCanvas2Dエミュレータを回転対応に更新。
+- 次: Claude側で `drawPlayerSkel()` をコード描画から `skel_*.png` の関節回転描画へ差し替える。実装時は `ASSET_VER` 更新を忘れないこと。
+
 各エントリ: `## YYYY-MM-DD — [claude|codex] 見出し` ／ 実施・検証・**相手への次タスク**。
 
 ---
