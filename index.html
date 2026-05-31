@@ -167,7 +167,7 @@ function manageBgm(){            // 毎フレーム呼ぶ（状態に応じてBG
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 // ★キャッシュ無効化: 素材PNGを差し替えたら ASSET_VER を変えると、ブラウザ/CDNが必ず新素材を取得する。
-const ASSET_VER = '2026053104';
+const ASSET_VER = '2026053105';
 function _av(s){ return s + (s.indexOf('?')<0 ? '?v=' : '&v=') + ASSET_VER; }
 const ASSETS = {
   // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
@@ -927,8 +927,12 @@ function drawSkelArm(sx,sy,sh,el,UA,FA,col,hi,buster,fire,charge,uaP,faP){
   if(buster){
     const md=faP?(faP.bh*0.86):FA, mx=e[0]+Math.sin(fa)*md, my=e[1]+Math.cos(fa)*md;  // 砲口位置
     ctx.save(); ctx.translate(mx,my); ctx.rotate(-fa);
-    if(!faP){ ctx.fillStyle='#0a1230'; ctx.fillRect(-3,-3,6.2,6.2); ctx.fillStyle=charge?'#eafcff':'#5ad1ff'; ctx.fillRect(-2,-2,4,4); }
-    if(charge){ ctx.fillStyle='#eafcff'; ctx.fillRect(-2.6,-2.6,5.2,5.2); }   // 蓄光オーブ(チャージ中のみ)
+    if(!faP){ ctx.fillStyle='#0a1230'; ctx.fillRect(-3,-3,6.2,6.2); ctx.fillStyle='#5ad1ff'; ctx.fillRect(-2,-2,4,4); }
+    if(charge){   // 蓄光オーブ=チャージ弾スプライト(塗り)。白い■にならないように
+      const co=getImg(BULLET_SPR.charge.src), sz=(player.charge>=40?7.5:4.5+(player.charge/40)*3);
+      if(co&&co.ready&&co.img){ const fw=co.img.width/(BULLET_SPR.charge.frames||1); ctx.drawImage(co.img,0,0,fw,co.img.height,-sz/2,-sz/2,sz,sz); }
+      else { ctx.fillStyle='#9fe6ff'; ctx.fillRect(-sz/2+0.5,-sz/2+0.5,sz-1,sz-1); }
+    }
     ctx.restore();   // 発射マズルはspawnFx('muzzle')に任せる(保持中は常時光らせない)
   }
 }

@@ -100,6 +100,10 @@ for(let i=0;i<8;i++){ clear(); G.player.anim=i*0.92; G.draw();
   const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS);
   save(path.join(__dirname,'preview_skelrun'+i+'.png'),[Math.max(0,dx-70),700,150,180,4]); }
 // 骨格 走り撃ち(fireHoldで腕前方保持・脚は走り)
-clear(); G.player.fireHold=18; G.player.anim=2; G.draw();
+clear(); G.player.fireHold=18; G.player.charge=0; G.player.anim=2; G.draw();
 { const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS); save(path.join(__dirname,'preview_skelrunshoot.png'),[Math.max(0,dx-80),700,180,180,4]); }
+// 骨格 走りチャージ(白■バグ確認=チャージ弾スプライトが出るはず)
+clear(); G.player.fireHold=0; G.player.charge=45; G.player.anim=2; G.draw();
+{ const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS); save(path.join(__dirname,'preview_skelruncharge.png'),[Math.max(0,dx-90),690,210,200,4]); }
+G.player.charge=0;
 console.log('preview saved (1920x1080): play/idle/run/left/shoot/charge/boss/boss_charge/boss_fire/skelrun0-7');
