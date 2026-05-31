@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 — [claude] BGM3曲＋SFX7種(CC0)を反映＝音声完備
+- BGM: オープ=Asteroid Belt / 通常=Interceptor Fleet / ボス=Master Core Awakening。初回キーでアンロック、状態で自動切替・ループ。
+- SFX: CodexがOpenGameArt(CC0)からDLした7種(shoot/charge/hit/boom/hurt/jump/heal)を `SFX_SRC` に紐付け。jump/healのコールも専用音に変更。ビープ→本物のSEに。
+- 音声ファイル無時はWebAudioシンセにフォールバック。`harness`=28/28。
+- **ライセンス**: BGMはユーザー提供曲。SFXはOpenGameArt CC0(クレジット不要)。
+
 ## 2026-05-31 - [codex] add sfx_heal.mp3
 - File: `assets/sfx_heal.mp3`
 - Source: OpenGameArt "Sound effects Mini Pack1.5" archive, internal file `1up/MP3/1up.mp3`; https://opengameart.org/content/sound-effects-mini-pack15

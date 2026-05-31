@@ -65,7 +65,14 @@ function aabb(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 function px(x,y,w,h,c){ if(!ctx)return; ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),w,h); }
 
 // ---------- 効果音（assets配置で音声ファイル優先・無ければWebAudioシンセ） ----------
-const SFX_SRC = {  // 例) shoot:'assets/sfx_shoot.mp3', hit:'assets/sfx_hit.mp3', ...（配置で有効）
+const SFX_SRC = {  // CC0音源(OpenGameArt)。無ければ下のシンセにフォールバック。
+  shoot :'assets/sfx_shoot.mp3',
+  charge:'assets/sfx_charge.mp3',
+  hit   :'assets/sfx_hit.mp3',
+  boom  :'assets/sfx_boom.mp3',
+  hurt  :'assets/sfx_hurt.mp3',
+  jump  :'assets/sfx_jump.mp3',
+  heal  :'assets/sfx_heal.mp3',
 };
 const _sfxEls={};
 let actx=null;
@@ -312,7 +319,7 @@ function updatePlayer(){
   if(player.onGround)player.coyote=6; else if(player.coyote>0)player.coyote--;
   if(PRESS[KJUMP])player.jumpBuf=6; else if(player.jumpBuf>0)player.jumpBuf--;
   if(player.jumpBuf>0 && player.coyote>0){
-    player.vy=JUMP; player.jumpBuf=0; player.coyote=0; player.onGround=false; sfx('shoot');
+    player.vy=JUMP; player.jumpBuf=0; player.coyote=0; player.onGround=false; sfx('jump');
     spawnFx('dust', player.x+player.w/2, player.y+player.h);
   }
   if(!keys[KJUMP] && player.vy<-3) player.vy=-3; // 可変ジャンプ
@@ -585,7 +592,7 @@ function updateItems(){
     if(!player.dead && player.hp>0 && aabb(player,it)){
       it.taken=true;
       player.hp=Math.min(player.maxhp, player.hp+(ITEM_HEAL[it.type]||0));
-      sfx('charge'); boom(it.x+it.w/2, it.y+it.h/2, '#7fff9f');
+      sfx('heal'); boom(it.x+it.w/2, it.y+it.h/2, '#7fff9f');
     }
   }
   for(let i=items.length-1;i>=0;i--) if(items[i].taken && items[i].t>30) items.splice(i,1);  // 掃除
