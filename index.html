@@ -167,7 +167,7 @@ function manageBgm(){            // 毎フレーム呼ぶ（状態に応じてBG
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 // ★キャッシュ無効化: 素材PNGを差し替えたら ASSET_VER を変えると、ブラウザ/CDNが必ず新素材を取得する。
-const ASSET_VER = '2026053101';
+const ASSET_VER = '2026053102';
 function _av(s){ return s + (s.indexOf('?')<0 ? '?v=' : '&v=') + ASSET_VER; }
 const ASSETS = {
   // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
@@ -214,6 +214,7 @@ function loadAssets(){
     }
   }
   loadRig();   // パーツ分割リグの素材も読み込む
+  loadSkel();  // 骨格用 塗りパーツ
 }
 // 足元(底辺中央)のスクリーン座標 footX/footY に、anim の現在コマを描く。dir<0で反転。
 function drawSheet(key, anim, time, footX, footY, dir, frame){
@@ -322,6 +323,7 @@ function preloadProgress(){
   let total=0, done=0;
   for(const k in ASSETS){ const a=ASSETS[k]; for(const n in (a.anims||{})){ const an=a.anims[n]; if(!an.src)continue; total++; if(an.settled)done++; } }
   for(const k in RIG){ const r=RIG[k]; for(const pn in r.parts){ const p=r.parts[pn]; if(!p.src)continue; total++; if(p.settled)done++; } }
+  for(const k in SKEL){ const p=SKEL[k]; if(!p.src)continue; total++; if(p.settled)done++; }
   if(_preloadList) for(const s of _preloadList){ total++; const r=_imgreg[s]; if(r&&r.settled)done++; }
   return total? done/total : 1;
 }
@@ -877,35 +879,57 @@ function drawTerrainSolid(s){
 }
 function drawSolids(){ for(const s of solids){ if(s.x+s.w<camX||s.x>camX+W)continue; if(!drawTerrainSolid(s)) tile(s.x-camX,s.y,s.w,s.h); } }
 
+// ====== 骨格用 塗りパーツ(各パーツ上端中央=関節, 縦向き) ======
+// bw/bh=描画ボックス(ワールドpx)。揃えば暫定コード描画に代わってdrawImageで描く。
+const SKEL = {
+  torso: {src:'assets/skel_torso.png', bw:15.5, bh:23},
+  thigh: {src:'assets/skel_thigh.png', bw:6.9, bh:8.2},
+  shin:  {src:'assets/skel_shin.png',  bw:6.2, bh:9.8},
+  uarm:  {src:'assets/skel_uarm.png',  bw:4.8, bh:6.4},
+  farm:  {src:'assets/skel_farm.png',  bw:5.4, bh:8.4},
+  buster:{src:'assets/skel_buster.png',bw:7.2, bh:9.2},
+};
+function loadSkel(){
+  if(typeof Image==='undefined') return;
+  for(const k in SKEL){ const p=SKEL[k]; if(!p.src) continue;
+    const im=new Image(); p.ready=false; p.settled=false;
+    im.onload=()=>{p.ready=true;p.settled=true;}; im.onerror=()=>{p.settled=true;}; im.src=_av(p.src); p.img=im;
+  }
+}
+function skelReady(){ return SKEL.torso.ready&&SKEL.thigh.ready&&SKEL.shin.ready&&SKEL.uarm.ready&&SKEL.farm.ready&&SKEL.buster.ready; }
+
 // ====== 骨格(スケルタル)アニメ: パーツを関節で回して滑らかに動かす ======
 // 角度は「真下=0, 前方(+x)を正」。ctx.rotate(-ang)で +ang→前方。先端を返す。
-function _limb(x,y,ang,len,w,col,hi){
+function _limb(x,y,ang,len,w,col,hi,part){
   ctx.save(); ctx.translate(x,y); ctx.rotate(-ang);
-  ctx.fillStyle='#0a1230'; ctx.fillRect(-w/2-0.6, -w*0.55, w+1.2, len+w*0.7);   // アウトライン(関節側に重ねて隙間を消す)
-  ctx.fillStyle=col; ctx.fillRect(-w/2, -w*0.35, w, len+w*0.5);
-  if(hi){ ctx.fillStyle=hi; ctx.fillRect(-w/2, -w*0.35, Math.max(1,w*0.4), len+w*0.5); } // ハイライト
+  if(part && part.ready && part.img){
+    ctx.drawImage(part.img, 0,0,part.img.width,part.img.height, -part.bw/2, -part.bh*0.12, part.bw, part.bh);
+  } else {
+    ctx.fillStyle='#0a1230'; ctx.fillRect(-w/2-0.6, -w*0.55, w+1.2, len+w*0.7);   // アウトライン(関節側に重ねて隙間を消す)
+    ctx.fillStyle=col; ctx.fillRect(-w/2, -w*0.35, w, len+w*0.5);
+    if(hi){ ctx.fillStyle=hi; ctx.fillRect(-w/2, -w*0.35, Math.max(1,w*0.4), len+w*0.5); } // ハイライト
+  }
   ctx.restore();
   return [x+Math.sin(ang)*len, y+Math.cos(ang)*len];
 }
-function drawSkelLeg(hx,hy,th,kn,TH,SH,col,hi){
-  const k=_limb(hx,hy,th,TH,4.6,col,hi);
+function drawSkelLeg(hx,hy,th,kn,TH,SH,col,hi,thP,shP){
+  const k=_limb(hx,hy,th,TH,4.6,col,hi,thP);
   const sa=th-kn;
-  const f=_limb(k[0],k[1],sa,SH,3.9,col,hi);
-  ctx.save(); ctx.translate(f[0],f[1]); ctx.rotate(-sa);   // 足
-  ctx.fillStyle='#0a1230'; ctx.fillRect(-1.6,-0.4,5.2,3.2);
-  ctx.fillStyle='#bfe6ff'; ctx.fillRect(-1.1,0.2,4.2,2.2);
-  ctx.restore();
+  const f=_limb(k[0],k[1],sa,SH,3.9,col,hi,shP);
+  if(!shP){ ctx.save(); ctx.translate(f[0],f[1]); ctx.rotate(-sa);   // 足(コード時のみ。脛パーツは足を含む)
+    ctx.fillStyle='#0a1230'; ctx.fillRect(-1.6,-0.4,5.2,3.2);
+    ctx.fillStyle='#bfe6ff'; ctx.fillRect(-1.1,0.2,4.2,2.2); ctx.restore(); }
 }
-function drawSkelArm(sx,sy,sh,el,UA,FA,col,hi,buster,fire,charge){
-  const e=_limb(sx,sy,sh,UA,3.7,col,hi);
+function drawSkelArm(sx,sy,sh,el,UA,FA,col,hi,buster,fire,charge,uaP,faP){
+  const e=_limb(sx,sy,sh,UA,3.7,col,hi,uaP);
   const fa=sh+el;
-  const h=_limb(e[0],e[1],fa,FA,buster?5.2:3.3,col,hi);
+  const h=_limb(e[0],e[1],fa,FA,buster?5.2:3.3,col,hi,faP);
   if(buster){
-    ctx.save(); ctx.translate(h[0],h[1]); ctx.rotate(-fa);
-    ctx.fillStyle='#0a1230'; ctx.fillRect(-3,-3,6.2,6.2);
-    ctx.fillStyle=charge?'#eafcff':'#5ad1ff'; ctx.fillRect(-2,-2,4,4);
-    if(fire){ ctx.fillStyle='#fff'; ctx.fillRect(-1.5,1.5,3,3.2); }
-    ctx.restore();
+    const md=faP?(faP.bh*0.86):FA, mx=e[0]+Math.sin(fa)*md, my=e[1]+Math.cos(fa)*md;  // 砲口位置
+    ctx.save(); ctx.translate(mx,my); ctx.rotate(-fa);
+    if(!faP){ ctx.fillStyle='#0a1230'; ctx.fillRect(-3,-3,6.2,6.2); ctx.fillStyle=charge?'#eafcff':'#5ad1ff'; ctx.fillRect(-2,-2,4,4); }
+    if(charge){ ctx.fillStyle='#eafcff'; ctx.fillRect(-2.6,-2.6,5.2,5.2); }   // 蓄光オーブ(チャージ中のみ)
+    ctx.restore();   // 発射マズルはspawnFx('muzzle')に任せる(保持中は常時光らせない)
   }
 }
 function drawPlayerSkel(footX, footY, dir){
@@ -934,24 +958,27 @@ function drawPlayerSkel(footX, footY, dir){
 
   const TH=7, SH=8, UA=5, FA=7;
   const hipY=footY-14+bob, shoY=footY-25+bob, hipX=footX+lean*3, shoX=footX+lean*9;
+  const SK=skelReady();
   ctx.save();
   if(dir<0){ ctx.translate(footX*2,0); ctx.scale(-1,1); }
-  drawSkelLeg(hipX-1.2,hipY,thF,knF,TH,SH,Bf,null);                 // 奥脚
-  drawSkelArm(shoX-2,shoY,shF,elF,UA,FA,Bf,null,false,false,false); // 奥腕
-  // 胴
-  ctx.fillStyle=O; ctx.fillRect(hipX-5,shoY-1,11,hipY-shoY+6);
-  ctx.fillStyle=B; ctx.fillRect(hipX-4,shoY,9,hipY-shoY+4);
-  ctx.fillStyle=BH; ctx.fillRect(hipX-4,shoY,3,hipY-shoY+4);
-  ctx.fillStyle=CY; ctx.fillRect(hipX-2,shoY+3,4,4);
-  // 頭+ヘルメット
-  const hx=shoX+lean*2, hy=shoY-6;
-  ctx.fillStyle=O; ctx.fillRect(hx-5,hy-3,11,11);
-  ctx.fillStyle='#ffd1a0'; ctx.fillRect(hx-3,hy+1,8,6);
-  ctx.fillStyle=B; ctx.fillRect(hx-5,hy-3,11,5); ctx.fillStyle=BH; ctx.fillRect(hx-5,hy-3,11,2);
-  ctx.fillStyle=CY; ctx.fillRect(hx+2,hy+2,3,2);
-  _limb(hx+3,hy-2,2.3,7,2.6,CY,WH);                                 // crest
-  drawSkelLeg(hipX+1.2,hipY,thN,knN,TH,SH,B,BH);                    // 手前脚
-  drawSkelArm(shoX+2,shoY,shN,elN,UA,FA,B,BH,true,firing,charging); // 手前腕(バスター)
+  drawSkelLeg(hipX-1.2,hipY,thF,knF,TH,SH,Bf,null, SK?SKEL.thigh:null, SK?SKEL.shin:null);                 // 奥脚
+  drawSkelArm(shoX-2,shoY,shF,elF,UA,FA,Bf,null,false,false,false, SK?SKEL.uarm:null, SK?SKEL.farm:null);  // 奥腕
+  if(SK){
+    const T=SKEL.torso; ctx.drawImage(T.img,0,0,T.img.width,T.img.height, shoX-T.bw/2, hipY+2-T.bh, T.bw, T.bh);  // 胴+頭+クレスト(塗り)
+  } else {
+    ctx.fillStyle=O; ctx.fillRect(hipX-5,shoY-1,11,hipY-shoY+6);
+    ctx.fillStyle=B; ctx.fillRect(hipX-4,shoY,9,hipY-shoY+4);
+    ctx.fillStyle=BH; ctx.fillRect(hipX-4,shoY,3,hipY-shoY+4);
+    ctx.fillStyle=CY; ctx.fillRect(hipX-2,shoY+3,4,4);
+    const hx=shoX+lean*2, hy=shoY-6;
+    ctx.fillStyle=O; ctx.fillRect(hx-5,hy-3,11,11);
+    ctx.fillStyle='#ffd1a0'; ctx.fillRect(hx-3,hy+1,8,6);
+    ctx.fillStyle=B; ctx.fillRect(hx-5,hy-3,11,5); ctx.fillStyle=BH; ctx.fillRect(hx-5,hy-3,11,2);
+    ctx.fillStyle=CY; ctx.fillRect(hx+2,hy+2,3,2);
+    _limb(hx+3,hy-2,2.3,7,2.6,CY,WH);
+  }
+  drawSkelLeg(hipX+1.2,hipY,thN,knN,TH,SH,B,BH, SK?SKEL.thigh:null, SK?SKEL.shin:null);                    // 手前脚
+  drawSkelArm(shoX+2,shoY,shN,elN,UA,FA,B,BH,true,firing,charging, SK?SKEL.uarm:null, SK?SKEL.buster:null); // 手前腕(バスター)
   ctx.restore();
 }
 
