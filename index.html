@@ -625,9 +625,11 @@ function updateBoss(){
   }
   else if(boss.state==='shoot'){
     if(boss.timer===18||boss.timer===38||boss.timer===58){
+      const mzx=boss.x+boss.w/2 + boss.dir*28, mzy=boss.y+13;   // 専用キャノンの砲口(前方の先端)から発射
+      spawnFx('muzzle', mzx, mzy, boss.dir);
       for(let i=-2;i<=2;i++){
         const ang=(boss.dir>0?0:Math.PI)+i*0.30;
-        shootE(boss.x+boss.w/2, boss.y+18, Math.cos(ang)*3.1, Math.sin(ang)*3.1, '#ff7a00');
+        shootE(mzx, mzy, Math.cos(ang)*3.1, Math.sin(ang)*3.1, '#ff7a00');
       }
     }
     if(boss.timer>78){ boss.state='think'; boss.timer=0; }
@@ -881,9 +883,10 @@ function drawPlayer(){
   const legFrame = legState==='run' ? Math.floor(player.anim) : 0;
   const armFrame = armState==='charge' ? Math.floor(player.blink/4) : 0;
   const footX = player.x-camX+player.w/2, footY = player.y+player.h;
-  // ① 全状態をリグで合成（arm_down自然化で待機/走りもバランス良。走り=動的な脚、走り撃ち=腕fireを保持）
-  if(drawPlayerRig(legState, armState, legFrame, armFrame, footX, footY, player.dir)) return;
-  // ② リグ素材が未配置のときのみ従来の高精細フルフレーム
+  // ① リグは「走り撃ち(脚run＋腕fire)」だけに使用＝走りながら腕を前方へ伸ばしっぱなしにする。
+  //    待機/走り/ジャンプ/立ち撃ち/チャージはバランスの取れた塗り一枚絵(player_*)を使う。
+  if(legState==='run' && armState==='fire' && drawPlayerRig(legState, armState, legFrame, armFrame, footX, footY, player.dir)) return;
+  // ② それ以外は従来の高精細フルフレーム
   const _anim = legState==='hurt' ? 'hurt'
     : legState==='jump' ? 'jump'
     : legState==='run'  ? (armState==='fire' && ASSETS.player.anims.runshoot ? 'runshoot' : 'run')
