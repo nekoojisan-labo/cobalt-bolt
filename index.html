@@ -117,10 +117,10 @@ function chargeSnd(on, level){
         const o=a.createOscillator(); o.type='square';
         const g=a.createGain(); g.gain.setValueAtTime(0.0001,now);
         const lfo=a.createOscillator(); lfo.type='square'; lfo.frequency.value=14;
-        const lg=a.createGain(); lg.gain.value=0.045;          // うねりの深さ
+        const lg=a.createGain(); lg.gain.value=0.014;          // うねりの深さ(控えめ)
         lfo.connect(lg); lg.connect(g.gain);
         o.connect(g); g.connect(_sfxMaster); o.start(); lfo.start();
-        g.gain.exponentialRampToValueAtTime(0.07, now+0.05);   // フェードイン
+        g.gain.exponentialRampToValueAtTime(0.024, now+0.06);  // フェードイン(音量を大幅に下げる)
         _chg={o,g,lfo};
       }
       _chg.o.frequency.setTargetAtTime(300+(level||0)*620, now, 0.04);   // 0→1 で 300→920Hz
@@ -395,7 +395,7 @@ function resetPlayer(){
     dead:false,deadT:0,coyote:0,jumpBuf:0,anim:0,blink:0});
 }
 
-const GRAV=0.5, MOVE=2.3, JUMP=-8.6, TERM=9;
+const GRAV=0.5, MOVE=3.2, JUMP=-8.6, TERM=9;   // MOVE: 歩き2.3→ダッシュ3.2
 
 function collideX(o){
   o.x+=o.vx;
@@ -431,7 +431,7 @@ function updatePlayer(){
   collideY(player);
   if(!player.wasGround && player.onGround){ spawnFx('dust', player.x+player.w/2, player.y+player.h); if(fallV>2.2) sfx('land'); } // 着地煙＋一定以上の落下で着地音
   player.wasGround=player.onGround;
-  if(player.onGround && mv!==0) player.anim+=0.22; else player.anim=0;
+  if(player.onGround && mv!==0) player.anim+=0.34; else player.anim=0;   // 脚アニメをダッシュ相当に速く
 
   // ショット
   if(player.shootCD>0)player.shootCD--;
