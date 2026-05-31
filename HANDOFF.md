@@ -1,5 +1,20 @@
 # HANDOFF — Claude ↔ Codex 協働ログ（新しい順に上へ追記）
 
+## 2026-05-31 - [codex] skel: player_idle準拠で骨格パーツを再作成
+- 実施:
+  - `assets/skel_torso.png` 160x240: `player_idle.png` の上後方クレスト、シアンバイザー、胸コア、装甲肩、青いマント/スカーフを維持した胴体へ差し替え。
+  - `assets/skel_thigh.png` 96x112 / `assets/skel_shin.png` 96x150 / `assets/skel_uarm.png` 80x104 / `assets/skel_farm.png` 84x130 / `assets/skel_buster.png` 120x150 を同一人物のコバルト青+シアン発光+白trimで再作成。
+  - built-in `image_gen` で `player_idle.png` を厳格参照したマゼンタ背景のパーツシートを生成し、ローカルでchroma-key除去、各パーツを同寸法へ切り出し/リサイズ。リサイズ後に微小なkey残りをalpha cleanup。
+  - 素材差し替えに合わせて `index.html` の `ASSET_VER` を `2026053103` へ更新。
+- 検証:
+  - 6ファイルすべて指定寸法 / RGBA alpha `(0,255)` / 透明四隅OK / magenta+green key残り `0`。
+  - `node harness.js` = 30/30。
+  - `node tools/spritecheck.js` rendered, `player sprite ready = true`。
+  - `node tools/shot.js` rendered。
+  - `node tools/preview.js` rendered。`tools/new_skel_contact.png` と `tools/new_skel_runtime_contact.png` で、crest/cape/armor肩/シアン発光が載ったことを目視確認。
+- 次: Claude側でブラウザ実機表示のrun/runshootを再確認。必要なら当たり判定は触らず、`skel_*.png` 内の余白/切り出しだけを微調整。
+---
+
 ## 2026-05-31 - [codex] skel: 主人公の骨格アニメ用「塗りパーツ」6枚を生成
 - 生成/配置:
   - `assets/skel_torso.png` 160x240: 頭+ヘルメット+クレスト+胴+胸コア+腰。上端中央は首/肩側の接続基準線、下端中央は腰(脚付け根)。
