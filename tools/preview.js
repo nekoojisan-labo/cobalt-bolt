@@ -41,6 +41,7 @@ clear(); G.state='loading'; G.draw(); save(path.join(__dirname,'preview_loading.
 clear(); G.start(); G.player.x=450; for(let i=0;i<40;i++)G.step(); G.draw();
 save(path.join(__dirname,'preview_play.png'));                       // 1920x1080 全景
 save(path.join(__dirname,'preview_idle_zoom.png'), zoom());
+{ const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS); save(path.join(__dirname,'preview_idle_tight.png'),[Math.max(0,dx-130),690,260,300,5]); } // 立ちの高倍率(継ぎ目診断)
 // run（右）敵除外でクリーンに
 clear(); G.start(); G.enemies.length=0; G.player.x=160; for(let i=0;i<30;i++){G.hold('arrowright');G.step();} G.draw();
 save(path.join(__dirname,'preview_run_zoom.png'), zoom());
