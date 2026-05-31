@@ -167,7 +167,7 @@ function manageBgm(){            // 毎フレーム呼ぶ（状態に応じてBG
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 // ★キャッシュ無効化: 素材PNGを差し替えたら ASSET_VER を変えると、ブラウザ/CDNが必ず新素材を取得する。
-const ASSET_VER = '2026053103';
+const ASSET_VER = '2026053104';
 function _av(s){ return s + (s.indexOf('?')<0 ? '?v=' : '&v=') + ASSET_VER; }
 const ASSETS = {
   // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
@@ -882,12 +882,12 @@ function drawSolids(){ for(const s of solids){ if(s.x+s.w<camX||s.x>camX+W)conti
 // ====== 骨格用 塗りパーツ(各パーツ上端中央=関節, 縦向き) ======
 // bw/bh=描画ボックス(ワールドpx)。揃えば暫定コード描画に代わってdrawImageで描く。
 const SKEL = {
-  torso: {src:'assets/skel_torso.png', bw:15.5, bh:23},
-  thigh: {src:'assets/skel_thigh.png', bw:6.9, bh:8.2},
-  shin:  {src:'assets/skel_shin.png',  bw:6.2, bh:9.8},
-  uarm:  {src:'assets/skel_uarm.png',  bw:4.8, bh:6.4},
-  farm:  {src:'assets/skel_farm.png',  bw:5.4, bh:8.4},
-  buster:{src:'assets/skel_buster.png',bw:7.2, bh:9.2},
+  torso: {src:'assets/skel_torso.png', bw:18, bh:22.5},
+  thigh: {src:'assets/skel_thigh.png', bw:9.6, bh:8.0},
+  shin:  {src:'assets/skel_shin.png',  bw:8.6, bh:9.6},
+  uarm:  {src:'assets/skel_uarm.png',  bw:6.6, bh:6.2},
+  farm:  {src:'assets/skel_farm.png',  bw:7.4, bh:8.2},
+  buster:{src:'assets/skel_buster.png',bw:9.6, bh:9.0},
 };
 function loadSkel(){
   if(typeof Image==='undefined') return;
@@ -992,7 +992,14 @@ function drawPlayer(){
   const legFrame = legState==='run' ? Math.floor(player.anim) : 0;
   const armFrame = armState==='charge' ? Math.floor(player.blink/4) : 0;
   const footX = player.x-camX+player.w/2, footY = player.y+player.h;
-  // 骨格(スケルタル)アニメで描画＝パーツを関節回転して滑らかに正しく動かす(走り=手足交互)
+  // 静止(立ち/立ち撃ち/チャージ/ジャンプは射撃以外)は元の主人公1枚絵=デザイン・ポーズ完全一致。
+  // 走り(脚を動かす)は骨格で滑らかに。これで「よく見る立ち姿=元の主人公」「走り=正しい動き」を両立。
+  const _standing = player.onGround && Math.abs(player.vx)<=0.1;
+  if(_standing){
+    const _anim = (player.inv>56)?'hurt' : (armState==='fire')?'shoot' : (armState==='charge')?'charge' : 'idle';
+    if(drawSheet('player', _anim, player.blink, footX, footY, player.dir)) return;
+  }
+  // 走り/ジャンプ(=動きのある状態)は骨格アニメ
   drawPlayerSkel(footX, footY, player.dir);
   return;
   // ===== 以下は旧コード描画リグ(未使用) =====
