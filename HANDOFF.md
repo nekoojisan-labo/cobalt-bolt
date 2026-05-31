@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] add sfx_boom.mp3
+- File: `assets/sfx_boom.mp3`
+- Source: OpenGameArt "Sound effects Mini Pack1.5" archive, internal file `Explosions/MP3/Explosion.mp3`; https://opengameart.org/content/sound-effects-mini-pack15
+- License: CC0.
+- Verification: MP3 frame scan passed (`bytes=20937`, `duration=0.836s`), not HTML/empty. `node harness.js` 28/28; `node tools/shot.js` rendered.
+
 ## 2026-05-31 - [codex] add sfx_hit.mp3
 - File: `assets/sfx_hit.mp3`
 - Source: OpenGameArt "Sound effects Mini Pack1.5" archive, internal file `Hit/MP3/Hit.mp3`; https://opengameart.org/content/sound-effects-mini-pack15
