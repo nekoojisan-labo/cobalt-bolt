@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] add sfx_jump.mp3
+- File: `assets/sfx_jump.mp3`
+- Source: OpenGameArt "Sound effects Mini Pack1.5" archive, internal file `Jump/MP3/Jump.mp3`; https://opengameart.org/content/sound-effects-mini-pack15
+- License: CC0.
+- Verification: MP3 frame scan passed (`bytes=8393`, `duration=0.313s`), not HTML/empty. `node harness.js` 28/28; `node tools/shot.js` rendered.
+
 ## 2026-05-31 - [codex] add sfx_hurt.mp3
 - File: `assets/sfx_hurt.mp3`
 - Source: OpenGameArt "Player Hit (damage)" direct file `playerhit.mp3`; https://opengameart.org/content/player-hit-damage
