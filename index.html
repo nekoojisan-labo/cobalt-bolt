@@ -959,7 +959,7 @@ function drawPlayerSkel(footX, footY, dir){
   else { shN=0.30; elN=0.6; }
   if(st==='run'){ shF=0.6*Math.sin(ph)+0.20; elF=0.7; }
   else if(st==='jump'){ shF=-0.25; elF=0.5; } else { shF=0.22; elF=0.6; }
-  if((firing||charging) && st==='run'){ lean*=0.45; bob*=0.5; }   // 撃つ間は前傾を抑えて起き上がり、バスターを安定して前へ構える
+  if((firing||charging) && st==='run'){ lean*=0.5; bob*=0.7; }   // 撃つ間は前傾を抑えて起き上がる(上下動は残し体と腕を連動)
   if(firing||charging){ shF=-0.05; elF=1.05; }                    // 撃つ間は奥腕を振らずに下げて固定(振り腕とバスターが別々に見える=人型崩れを防ぐ)
 
   const TH=7, SH=8, UA=5, FA=7;
@@ -987,11 +987,15 @@ function drawPlayerSkel(footX, footY, dir){
   // 手前腕: 射撃/チャージ中は「1本につながった伸ばしバスター腕」で前方へ構える(組み立て感を消す)。それ以外は骨格の腕を振る
   if((firing||charging) && RIG.player.parts.arm_fire.ready){
     const ap=RIG.player.parts.arm_fire, SC=0.118, iw=ap.img.width, ih=ap.img.height, dw=iw*SC, dh=ih*SC;
-    ctx.drawImage(ap.img,0,0,iw,ih, shoX+2 - dw*(90/256), shoY-1 - dh*(98/256), dw, dh);   // 肩ボールを肩に合わせ前方へ伸ばす
+    const sway = (st==='run') ? Math.sin(ph)*0.12 : (st==='jump' ? (player.vy<0?-0.08:0.05) : 0);  // 肩を支点に走り/ジャンプと連動して揺れる
+    ctx.save();
+    ctx.translate(shoX+2, shoY-1); ctx.rotate(-sway);                          // 肩を支点に(バスター腕は体の動きと連動)
+    ctx.drawImage(ap.img,0,0,iw,ih, -dw*(90/256), -dh*(98/256), dw, dh);       // 肩ボールを肩に合わせ前方へ伸ばす
     if(charging){
-      const muzx=shoX+2 + dw*(145/256), muzy=shoY-1, co=getImg(BULLET_SPR.charge.src), osz=(player.charge>=40?8:5+(player.charge/40)*3);
-      if(co&&co.ready&&co.img){ const fw=co.img.width/(BULLET_SPR.charge.frames||1); ctx.drawImage(co.img,0,0,fw,co.img.height, muzx-osz/2, muzy-osz/2, osz, osz); }
+      const muzx=dw*(145/256), co=getImg(BULLET_SPR.charge.src), osz=(player.charge>=40?8:5+(player.charge/40)*3);
+      if(co&&co.ready&&co.img){ const fw=co.img.width/(BULLET_SPR.charge.frames||1); ctx.drawImage(co.img,0,0,fw,co.img.height, muzx-osz/2, -osz/2, osz, osz); }
     }
+    ctx.restore();
   } else {
     drawSkelArm(shoX+2,shoY,shN,elN,UA,FA,B,BH,true,firing,charging, SK?SKEL.uarm:null, SK?SKEL.buster:null); // 手前腕(バスター)
   }
