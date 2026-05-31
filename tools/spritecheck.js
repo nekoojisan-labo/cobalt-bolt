@@ -46,29 +46,34 @@ function decodePNG(b){
 }
 
 // ---- Canvas2D 互換（drawImage対応）----
-let t={sx:1,sy:1,tx:0,ty:0};const stack=[];
+let t={a:1,b:0,c:0,d:1,e:0,f:0};const stack=[];
+function dev(x,y){return{x:t.a*x+t.c*y+t.e,y:t.b*x+t.d*y+t.f};}
+function inv(X,Y){const det=t.a*t.d-t.b*t.c||1e-9,dx=X-t.e,dy=Y-t.f;return{x:(t.d*dx-t.c*dy)/det,y:(-t.b*dx+t.a*dy)/det};}
 function gradColor(stops,u){if(!stops.length)return{r:0,g:0,b:0,a:1};if(u<=stops[0].o)return stops[0].c;for(let i=1;i<stops.length;i++){if(u<=stops[i].o){const a=stops[i-1],b=stops[i],k=(u-a.o)/((b.o-a.o)||1);return{r:a.c.r+(b.c.r-a.c.r)*k,g:a.c.g+(b.c.g-a.c.g)*k,b:a.c.b+(b.c.b-a.c.b)*k,a:1};}}return stops[stops.length-1].c;}
 const ctx={imageSmoothingEnabled:false,fillStyle:'#000',font:'',textAlign:'left',textBaseline:'alphabetic',
   save(){stack.push({...t});},restore(){if(stack.length)t=stack.pop();},
-  translate(dx,dy){t.tx+=t.sx*dx;t.ty+=t.sy*dy;},scale(ax,ay){t.sx*=ax;t.sy*=ay;},
-  createLinearGradient(x0,y0,x1,y1){return{__grad:true,p0:{x:t.tx+t.sx*x0,y:t.ty+t.sy*y0},p1:{x:t.tx+t.sx*x1,y:t.ty+t.sy*y1},stops:[],addColorStop(o,c){this.stops.push({o,c:parseColor(c)});}};},
-  fillRect(x,y,w,h){const xa=t.tx+t.sx*x,xb=t.tx+t.sx*(x+w),ya=t.ty+t.sy*y,yb=t.ty+t.sy*(y+h);
-    const x0=Math.floor(Math.min(xa,xb)),x1=Math.ceil(Math.max(xa,xb)),y0=Math.floor(Math.min(ya,yb)),y1=Math.ceil(Math.max(ya,yb));const fs=this.fillStyle;
-    if(fs&&fs.__grad){const gx=fs.p1.x-fs.p0.x,gy=fs.p1.y-fs.p0.y,l2=(gx*gx+gy*gy)||1;for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++){let u=((px-fs.p0.x)*gx+(py-fs.p0.y)*gy)/l2;u=u<0?0:u>1?1:u;setPx(px,py,gradColor(fs.stops,u));}}
-    else{const col=parseColor(fs);for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++)setPx(px,py,col);}},
+  translate(dx,dy){t.e+=t.a*dx+t.c*dy;t.f+=t.b*dx+t.d*dy;},
+  scale(ax,ay){t.a*=ax;t.b*=ax;t.c*=ay;t.d*=ay;},
+  rotate(r){const co=Math.cos(r),si=Math.sin(r),a=t.a,b=t.b,c=t.c,d=t.d;t.a=a*co+c*si;t.b=b*co+d*si;t.c=-a*si+c*co;t.d=-b*si+d*co;},
+  setTransform(a,b,c,d,e,f){t={a,b,c,d,e,f};},
+  createLinearGradient(x0,y0,x1,y1){return{__grad:true,p0:dev(x0,y0),p1:dev(x1,y1),stops:[],addColorStop(o,c){this.stops.push({o,c:parseColor(c)});}};},
+  fillRect(x,y,w,h){const c0=dev(x,y),c1=dev(x+w,y),c2=dev(x+w,y+h),c3=dev(x,y+h);
+    const x0=Math.floor(Math.min(c0.x,c1.x,c2.x,c3.x)),x1=Math.ceil(Math.max(c0.x,c1.x,c2.x,c3.x)),y0=Math.floor(Math.min(c0.y,c1.y,c2.y,c3.y)),y1=Math.ceil(Math.max(c0.y,c1.y,c2.y,c3.y));const fs=this.fillStyle;
+    if(fs&&fs.__grad){const gx=fs.p1.x-fs.p0.x,gy=fs.p1.y-fs.p0.y,l2=(gx*gx+gy*gy)||1;for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++){const q=inv(px+0.5,py+0.5);if(q.x<x||q.x>=x+w||q.y<y||q.y>=y+h)continue;let u=((px-fs.p0.x)*gx+(py-fs.p0.y)*gy)/l2;u=u<0?0:u>1?1:u;setPx(px,py,gradColor(fs.stops,u));}}
+    else{const col=parseColor(fs);for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++){const q=inv(px+0.5,py+0.5);if(q.x<x||q.x>=x+w||q.y<y||q.y>=y+h)continue;setPx(px,py,col);}}},
   fillText(){/* 検証では省略 */},
   drawImage(img){const a=[...arguments];let sx,sy,sw,sh,dx,dy,dw,dh;
     if(a.length>=9){[,sx,sy,sw,sh,dx,dy,dw,dh]=a;}else if(a.length===5){sx=0;sy=0;sw=img.width;sh=img.height;[,dx,dy,dw,dh]=a;}else{sx=0;sy=0;sw=img.width;sh=img.height;[,dx,dy]=a;dw=sw;dh=sh;}
-    const xa=t.tx+t.sx*dx,xb=t.tx+t.sx*(dx+dw),ya=t.ty+t.sy*dy,yb=t.ty+t.sy*(dy+dh);
-    const X0=Math.floor(Math.min(xa,xb)),X1=Math.ceil(Math.max(xa,xb)),Y0=Math.floor(Math.min(ya,yb)),Y1=Math.ceil(Math.max(ya,yb));
+    const c0=dev(dx,dy),c1=dev(dx+dw,dy),c2=dev(dx+dw,dy+dh),c3=dev(dx,dy+dh);
+    const X0=Math.floor(Math.min(c0.x,c1.x,c2.x,c3.x)),X1=Math.ceil(Math.max(c0.x,c1.x,c2.x,c3.x)),Y0=Math.floor(Math.min(c0.y,c1.y,c2.y,c3.y)),Y1=Math.ceil(Math.max(c0.y,c1.y,c2.y,c3.y));
     for(let py=Y0;py<Y1;py++)for(let px=X0;px<X1;px++){
-      const destX=(px+0.5-t.tx)/t.sx,destY=(py+0.5-t.ty)/t.sy;const u=(destX-dx)/dw,v=(destY-dy)/dh;if(u<0||u>=1||v<0||v>=1)continue;
+      const q=inv(px+0.5,py+0.5),u=(q.x-dx)/dw,v=(q.y-dy)/dh;if(u<0||u>=1||v<0||v>=1)continue;
       const srcX=Math.min(img.width-1,Math.floor(sx+u*sw)),srcY=Math.min(img.height-1,Math.floor(sy+v*sh));const o=(srcY*img.width+srcX)*4;
       setPx(px,py,{r:img.data[o],g:img.data[o+1],b:img.data[o+2],a:img.data[o+3]/255});}}
 };
 
 // ---- Image シム（PNG即時デコード）----
-class Image{set src(p){try{const d=decodePNG(fs.readFileSync(p));this.width=d.width;this.height=d.height;this.data=d.data;if(this.onload)this.onload();}catch(e){if(this.onerror)this.onerror(e);}}}
+class Image{set src(p){try{const c=String(p).split('?')[0];const d=decodePNG(fs.readFileSync(c));this.width=d.width;this.height=d.height;this.data=d.data;if(this.onload)this.onload();}catch(e){if(this.onerror)this.onerror(e);}}}
 globalThis.Image=Image;
 
 // ---- PNG書き出し ----

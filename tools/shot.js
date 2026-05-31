@@ -33,32 +33,46 @@ function setPx(x,y,col){
 
 // ---- Canvas2D 互換コンテキスト ----
 function makeCtx(){
-  let t = { sx:1, sy:1, tx:0, ty:0 };
+  let t = { a:1, b:0, c:0, d:1, e:0, f:0 };
   const stack = [];
+  const dev = (x,y)=>({ x:t.a*x + t.c*y + t.e, y:t.b*x + t.d*y + t.f });
+  const inv = (X,Y)=>{
+    const det = t.a*t.d - t.b*t.c || 1e-9, dx = X - t.e, dy = Y - t.f;
+    return { x:(t.d*dx - t.c*dy)/det, y:(-t.b*dx + t.a*dy)/det };
+  };
   const ctx = {
     imageSmoothingEnabled:false, fillStyle:'#000', font:'', textAlign:'left', textBaseline:'alphabetic',
     save(){ stack.push({...t}); },
     restore(){ if (stack.length) t = stack.pop(); },
-    translate(dx,dy){ t.tx += t.sx*dx; t.ty += t.sy*dy; },
-    scale(ax,ay){ t.sx *= ax; t.sy *= ay; },
+    translate(dx,dy){ t.e += t.a*dx + t.c*dy; t.f += t.b*dx + t.d*dy; },
+    scale(ax,ay){ t.a *= ax; t.b *= ax; t.c *= ay; t.d *= ay; },
+    rotate(r){
+      const co=Math.cos(r), si=Math.sin(r), a=t.a, b=t.b, c=t.c, d=t.d;
+      t.a = a*co + c*si; t.b = b*co + d*si; t.c = -a*si + c*co; t.d = -b*si + d*co;
+    },
+    setTransform(a,b,c,d,e,f){ t = {a,b,c,d,e,f}; },
     createLinearGradient(x0,y0,x1,y1){
-      return { __grad:true, p0:{x:t.tx+t.sx*x0, y:t.ty+t.sy*y0}, p1:{x:t.tx+t.sx*x1, y:t.ty+t.sy*y1}, stops:[],
+      return { __grad:true, p0:dev(x0,y0), p1:dev(x1,y1), stops:[],
                addColorStop(o,c){ this.stops.push({o, c:parseColor(c)}); } };
     },
     fillRect(x,y,w,h){
-      const xa=t.tx+t.sx*x, xb=t.tx+t.sx*(x+w), ya=t.ty+t.sy*y, yb=t.ty+t.sy*(y+h);
-      const x0=Math.floor(Math.min(xa,xb)), x1=Math.ceil(Math.max(xa,xb));
-      const y0=Math.floor(Math.min(ya,yb)), y1=Math.ceil(Math.max(ya,yb));
+      const p0=dev(x,y), p1=dev(x+w,y), p2=dev(x+w,y+h), p3=dev(x,y+h);
+      const x0=Math.floor(Math.min(p0.x,p1.x,p2.x,p3.x)), x1=Math.ceil(Math.max(p0.x,p1.x,p2.x,p3.x));
+      const y0=Math.floor(Math.min(p0.y,p1.y,p2.y,p3.y)), y1=Math.ceil(Math.max(p0.y,p1.y,p2.y,p3.y));
       const fs = this.fillStyle;
       if (fs && fs.__grad){
         const gx=fs.p1.x-fs.p0.x, gy=fs.p1.y-fs.p0.y, len2=(gx*gx+gy*gy)||1;
         for (let py=y0;py<y1;py++) for (let px=x0;px<x1;px++){
+          const q=inv(px+0.5,py+0.5); if(q.x<x||q.x>=x+w||q.y<y||q.y>=y+h) continue;
           let u=((px-fs.p0.x)*gx+(py-fs.p0.y)*gy)/len2; u=u<0?0:u>1?1:u;
           setPx(px,py,gradColor(fs.stops,u));
         }
       } else {
         const col=parseColor(fs);
-        for (let py=y0;py<y1;py++) for (let px=x0;px<x1;px++) setPx(px,py,col);
+        for (let py=y0;py<y1;py++) for (let px=x0;px<x1;px++){
+          const q=inv(px+0.5,py+0.5); if(q.x<x||q.x>=x+w||q.y<y||q.y>=y+h) continue;
+          setPx(px,py,col);
+        }
       }
     },
     fillText(s,x,y){ drawText(this, s, x, y); },
