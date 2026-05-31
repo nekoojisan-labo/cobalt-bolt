@@ -403,32 +403,42 @@ function drawEffects(){
 //======================================================================
 //  敵
 //======================================================================
-let enemies=[];
+let enemies=[], spawns=[];
 const mkE=(type,x,y,o={})=>Object.assign({type,x,y,w:20,h:18,hp:2,alive:true,t:0,vx:0,vy:0,
   dir:-1,hit:0,onGround:false,phase:'hide',timer:0,baseY:y,deathT:0},o);
 
+// 配置ポイント方式：画面に入ると出現／十分離れると消滅／戻ると配置点でプレイヤーへ向き合って復活
 function buildEnemies(){
-  // 当たり判定は見た目(塗り2D)に合わせて高めに＝同じ高さの弾が当たる。地上敵は h28 で底辺を地面に。
-  const G=(type,x,o={})=>mkE(type,x,GROUND_Y-28,Object.assign({w:type==='turret'?24:22,h:28},o));
-  enemies=[
-    G('met',   380,{hp:2}),
-    G('walker',560,{hp:2,dir:-1}),
-    mkE('flyer', 760,160,{w:24,h:22,hp:1}),
-    mkE('met',   840,176-28,{w:22,h:28,hp:2}),          // 足場上
-    G('walker',1000,{hp:2,dir:1}),
-    G('turret',1110,{hp:3}),
-    mkE('flyer',1380,150,{w:24,h:22,hp:1}),
-    mkE('walker',1450,158-28,{w:22,h:28,hp:2,dir:1}),   // 足場上(ハザード横)
-    G('met',   1700,{hp:2}),
-    mkE('turret',2310,158-28,{w:24,h:28,hp:3}),         // 高所砲台(足場2300に乗る)
-    G('walker',2200,{hp:2,dir:-1}),
-    mkE('flyer',2420,160,{w:24,h:22,hp:1}),
-    G('met',   2720,{hp:2}),
-    G('walker',2960,{hp:2,dir:1}),
-    mkE('flyer',3100,155,{w:24,h:22,hp:1}),
-    G('met',   3450,{hp:2}),
-    G('turret',3560,{hp:3}),
+  enemies=[];
+  const g=(type,x,o={})=>({type,x,y:GROUND_Y-28,opts:Object.assign({w:type==='turret'?24:22,h:28},o),active:false,enemy:null});
+  const a=(type,x,y,o={})=>({type,x,y,opts:o,active:false,enemy:null});
+  spawns=[
+    g('met',380,{hp:2}),          g('walker',560,{hp:2,dir:-1}),
+    a('flyer',760,160,{w:24,h:22,hp:1}),   a('met',840,176-28,{w:22,h:28,hp:2}),
+    g('walker',1000,{hp:2,dir:1}), g('turret',1110,{hp:3}),
+    a('flyer',1380,150,{w:24,h:22,hp:1}),  a('walker',1450,158-28,{w:22,h:28,hp:2,dir:1}),
+    g('met',1700,{hp:2}),          a('turret',2310,158-28,{w:24,h:28,hp:3}),
+    g('walker',2200,{hp:2,dir:-1}), a('flyer',2420,160,{w:24,h:22,hp:1}),
+    g('met',2720,{hp:2}),          g('walker',2960,{hp:2,dir:1}),
+    a('flyer',3100,155,{w:24,h:22,hp:1}),  g('met',3450,{hp:2}),  g('turret',3560,{hp:3}),
   ];
+}
+function manageSpawns(){
+  const PAD=48, DESP=W*0.6;                       // 出現マージン/消滅距離
+  for(const sp of spawns){
+    if(sp.active){
+      const cx=(sp.enemy&&sp.enemy.alive)?sp.enemy.x:sp.x;
+      if(cx<camX-DESP || cx>camX+W+DESP){          // 画面から十分離れた→スロット解放
+        if(sp.enemy&&sp.enemy.alive){ const i=enemies.indexOf(sp.enemy); if(i>=0)enemies.splice(i,1); }
+        sp.active=false; sp.enemy=null;
+      }
+    } else if(sp.x>=camX-PAD && sp.x<=camX+W+PAD){  // 画面に入った→復活
+      const e=mkE(sp.type, sp.x, sp.y, Object.assign({},sp.opts));
+      e.dir=sign(player.x-sp.x)||-1;               // プレイヤーへ向き合う
+      if(sp.type==='flyer')e.baseY=sp.y;
+      enemies.push(e); sp.enemy=e; sp.active=true;
+    }
+  }
 }
 
 function eGravity(o){
@@ -469,8 +479,7 @@ function updateEnemies(){
     }
     else if(e.type==='walker'){ eGravity(e); patrol(e,0.8); }
     else if(e.type==='flyer'){
-      e.x-=0.95; e.y=e.baseY+Math.sin(e.t*0.07)*24;
-      if(e.x < camX-100){ e.x=camX+W+40; e.baseY=rnd(70,150); }
+      e.x-=0.95; e.y=e.baseY+Math.sin(e.t*0.07)*24;   // 復活は manageSpawns が担当
     }
     else if(e.type==='turret'){
       eGravity(e); e.timer++;
@@ -649,6 +658,7 @@ function update(){
   if(state==='clear'){ clearT++; if(PRESS[KENTER]) state='title'; return; }
 
   updatePlayer();
+  manageSpawns();          // 配置ポイント→出現/消滅/復活
   updateEnemies();
   updateItems();
   for(const hz of hazards){ if(!player.dead && aabb(player,hz)) hurt(2,false); }  // スパイク帯
@@ -999,7 +1009,7 @@ if(typeof globalThis!=='undefined'){
     get state(){return state}, get player(){return player}, get enemies(){return enemies},
     get boss(){return boss}, get bossActive(){return bossActive},
     get pBullets(){return pBullets}, get eBullets(){return eBullets},
-    get camX(){return camX}, get solids(){return solids}, get items(){return items}, get hazards(){return hazards},
+    get camX(){return camX}, get solids(){return solids}, get items(){return items}, get hazards(){return hazards}, get spawns(){return spawns},
     consts:{W,H,GROUND_Y,LEVEL_W,ROOM_X,BOSS_TRIGGER,PW,PH},
     start:startGame,
     draw(){ render(); },                                          // 現在状態を描画（スクショ検証用）

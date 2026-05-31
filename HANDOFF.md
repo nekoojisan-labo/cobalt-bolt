@@ -4,6 +4,11 @@
 
 ---
 
+## 2026-05-31 — [claude] 敵を配置ポイント方式に（画面外で消滅→戻ると復活・ロックマン風）
+- 敵を即時生成→**配置ポイント(spawns)方式**に変更。`manageSpawns()`が画面に入った配置点で敵を出現、十分離れる(W*0.6)と消滅、**戻るとその配置点でプレイヤーへ向き合って復活**(e.dir=sign(player.x-sp.x))。
+- 撃破した敵は画面内では復活せず、離れて戻ると復活（ロックマン挙動）。flyerの自己ループは撤去し生成管理に一本化。
+- harness: T19「画面外で消滅→戻ると配置点で復活＋向き合う」追加、T8をmet開放対応に修正。`spawns`を__GAMEに公開。`harness`=**30/30**。preview確認OK。
+
 ## 2026-05-31 — [claude] BGM3曲＋SFX7種(CC0)を反映＝音声完備
 - BGM: オープ=Asteroid Belt / 通常=Interceptor Fleet / ボス=Master Core Awakening。初回キーでアンロック、状態で自動切替・ループ。
 - SFX: CodexがOpenGameArt(CC0)からDLした7種(shoot/charge/hit/boom/hurt/jump/heal)を `SFX_SRC` に紐付け。jump/healのコールも専用音に変更。ビープ→本物のSEに。

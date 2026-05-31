@@ -71,12 +71,15 @@ check('自弾が前方へ進む(vx≠0)', G.pBullets.some(b=>b.vx!==0), '');
 
 // ---- T8: 自弾が敵に当たると倒せる（衝突＆ダメージ経路）----
 G.start(); G.releaseAll(); steps(3);
-const target = G.enemies.find(e=>e.type==='flyer') || G.enemies[0]; // flyerはhp1
-const ehp0 = target.hp;
-// 敵の位置にダメージ弾を直接生成して衝突経路を検証
-G.pBullets.push({ x: target.x+2, y: target.y+2, w: target.w-2, h: target.h-2, vx: 0, dmg: 5, charge:false, life: 5 });
-G.step();
-check('自弾が敵にダメージを与える/撃破', (!target.alive) || (target.hp < ehp0), `alive=${target.alive} hp=${target.hp}/${ehp0}`);
+const target = G.enemies.find(e=>e.type!=='met') || G.enemies[0]; // 配置方式：画面内の敵
+if(target && target.type==='met') target.phase='open';            // metは隠れ無敵を解除
+if(target){
+  const ehp0 = target.hp;
+  // 敵の位置にダメージ弾を直接生成して衝突経路を検証
+  G.pBullets.push({ x: target.x+2, y: target.y+2, w: target.w-2, h: target.h-2, vx: 0, dmg: 5, charge:false, life: 5 });
+  G.step();
+  check('自弾が敵にダメージを与える/撃破', (!target.alive) || (target.hp < ehp0), `alive=${target.alive} hp=${target.hp}/${ehp0}`);
+} else check('自弾が敵にダメージを与える/撃破', false, '画面内に敵なし');
 
 // ---- T9: 敵接触でプレイヤーがダメージ ----
 G.start(); G.releaseAll(); steps(3);
@@ -197,6 +200,18 @@ if(tm){
   check('弾は薄い足場を貫通して敵に当たる', (!tm.alive)||(tm.hp<hp0), `alive=${tm.alive} hp=${tm.hp}/${hp0}`);
   G.solids.pop();
 } else check('弾は薄い足場を貫通して敵に当たる', false, 'met無し');
+
+// ---- T19: 敵は画面外で消え、戻ると配置点でプレイヤーへ向き合って復活 ----
+G.start(); G.releaseAll(); for(let i=0;i<6;i++)G.step();
+const metSp=G.spawns && G.spawns.find(s=>s.type==='met' && s.x===380);
+const nearMet=()=>G.enemies.some(e=>e.type==='met' && Math.abs(e.x-380)<40 && e.alive);
+const appeared=nearMet();                                  // 開始付近で出現済み
+G.player.x=1200; for(let i=0;i<70;i++){ G.releaseAll(); G.step(); }   // 遠くへ→消滅
+const gone = metSp && !metSp.active && !nearMet();
+G.player.x=420;  for(let i=0;i<70;i++){ G.releaseAll(); G.step(); }   // 戻る→復活
+const re=G.enemies.find(e=>e.type==='met' && Math.abs(e.x-380)<40);
+check('敵は画面外で消え戻ると配置点で復活', appeared && gone && !!re, `出現${appeared} 消滅${gone} 復活${!!re}`);
+check('復活時プレイヤーへ向き合う', !!re && re.dir===(420>=380?1:-1), `dir=${re?re.dir:'-'}`);
 
 // ==== 結果 ====
 console.log('\n==== ROCK BUSTER ヘッドレス検証 ====');
