@@ -95,14 +95,41 @@ function sfx(type){
   if(src && typeof Audio!=='undefined'){ try{ if(!_sfxEls[src]){const e=new Audio(src);e.volume=0.5;_sfxEls[src]=e;} const c=_sfxEls[src].cloneNode(); c.volume=0.5; c.play().catch(()=>{}); return; }catch(e){} }
   try{
     const a=_actx(); if(!a) return; const t=a.currentTime;
-    if(type==='shoot'){ _noise(0.04,0.07,t,7000,2000); _tone('sawtooth',1600,240,0.11,0.15,t); _tone('square',2400,800,0.05,0.06,t); }  // 弾を撃ち出す発射音(シュッ＋下降)
-    else if(type==='charge'){ _tone('square',1500,360,0.20,0.18,t); _noise(0.16,0.05,t,3000,400); } // チャージショット
-    else if(type==='hit'){ _tone('square',1700,1300,0.045,0.10,t); }            // 着弾"チッ"
-    else if(type==='boom'){ _noise(0.30,0.18,t,4500,120); _tone('triangle',200,55,0.28,0.10,t); }   // 爆発
-    else if(type==='hurt'){ _tone('square',210,110,0.22,0.16,t); _noise(0.16,0.07,t,1400,300); }     // 被弾(ロックマン風ブザー)
-    else if(type==='die'){ _tone('square',540,80,0.5,0.16,t); _tone('square',440,70,0.5,0.12,t,0.05); _noise(0.45,0.12,t,3200,90); } // 死亡
-    else if(type==='jump'){ _tone('square',360,720,0.09,0.10,t); }              // ジャンプ
+    if(type==='shoot'){ _tone('square',900,170,0.085,0.13,t); _tone('square',1350,520,0.05,0.05,t); }   // 通常バスター "ピュッ"
+    else if(type==='chargeshot'){ _tone('square',520,120,0.24,0.17,t); _tone('sawtooth',1040,240,0.20,0.07,t); _noise(0.22,0.10,t,3600,180); _tone('square',1700,1700,0.04,0.06,t); } // チャージショット "ピョーン"
+    else if(type==='hit'){ _tone('square',1500,950,0.04,0.09,t); }              // 敵に着弾 "チッ"
+    else if(type==='boom'){ _noise(0.30,0.17,t,4200,90); _tone('triangle',180,48,0.28,0.12,t); _tone('square',300,80,0.10,0.05,t); }   // 撃破 爆発
+    else if(type==='hurt'){ _tone('square',300,80,0.20,0.15,t); _noise(0.13,0.10,t,2000,260); }       // 被弾 "ブッ↓"
+    else if(type==='die'){ _tone('square',620,70,0.55,0.16,t); _tone('square',500,60,0.55,0.12,t,0.05); _noise(0.5,0.13,t,3000,80); } // 撃破死
+    else if(type==='land'){ _tone('square',210,95,0.06,0.08,t); _noise(0.05,0.06,t,1100,260); }       // 着地 "トッ"
+    else if(type==='jump'){ _tone('square',330,700,0.09,0.10,t); }              // ジャンプ
     else if(type==='heal'){ _tone('square',700,700,0.07,0.13,t); _tone('square',1050,1050,0.08,0.13,t,0.08); _tone('square',1500,1500,0.10,0.12,t,0.17); } // 回復チャイム
+  }catch(e){}
+}
+// チャージ中の持続うなり音（押し続けで上昇／離すと停止）
+let _chg=null;
+function chargeSnd(on, level){
+  if(HEADLESS) return;
+  try{
+    const a=_actx(); if(!a) return; const now=a.currentTime;
+    if(on){
+      if(!_chg){
+        const o=a.createOscillator(); o.type='square';
+        const g=a.createGain(); g.gain.setValueAtTime(0.0001,now);
+        const lfo=a.createOscillator(); lfo.type='square'; lfo.frequency.value=14;
+        const lg=a.createGain(); lg.gain.value=0.045;          // うねりの深さ
+        lfo.connect(lg); lg.connect(g.gain);
+        o.connect(g); g.connect(_sfxMaster); o.start(); lfo.start();
+        g.gain.exponentialRampToValueAtTime(0.07, now+0.05);   // フェードイン
+        _chg={o,g,lfo};
+      }
+      _chg.o.frequency.setTargetAtTime(300+(level||0)*620, now, 0.04);   // 0→1 で 300→920Hz
+      _chg.lfo.frequency.setTargetAtTime(12+(level||0)*20, now, 0.05);   // 満タンほど速いうねり
+    } else if(_chg){
+      const c=_chg; _chg=null;
+      try{ c.g.gain.cancelScheduledValues(now); c.g.gain.setTargetAtTime(0.0001, now, 0.02);
+           c.o.stop(now+0.12); c.lfo.stop(now+0.12); }catch(e){}
+    }
   }catch(e){}
 }
 
@@ -285,7 +312,7 @@ const pBullets=[], eBullets=[];
 function shootP(x,y,dir,charge){
   pBullets.push({x,y,w:charge?13:8,h:charge?13:5,vx:dir*(charge?6.5:8),dmg:charge?3:1,charge,life:90});
   spawnFx('muzzle', x+dir*4, y+(charge?6:2), dir);
-  sfx(charge?'charge':'shoot');
+  sfx(charge?'chargeshot':'shoot');
 }
 function shootE(x,y,vx,vy,c='#ff5a4a'){ eBullets.push({x,y,w:7,h:7,vx,vy,c,life:300}); }
 
@@ -318,7 +345,7 @@ function collideY(o){
 }
 
 function updatePlayer(){
-  if(player.dead){player.deadT++;return;}
+  if(player.dead){ chargeSnd(false); player.deadT++; return; }   // 死亡中はチャージ音を止める
   // 横
   let mv=0;
   if(keys[KL]){mv=-1;player.dir=-1;}
@@ -334,8 +361,9 @@ function updatePlayer(){
   if(!keys[KJUMP] && player.vy<-3) player.vy=-3; // 可変ジャンプ
   player.vy=clamp(player.vy+GRAV,-20,TERM);
   collideX(player);
+  const fallV=player.vy;                 // 着地判定用に落下速度を退避(collideYでvyが0になる前)
   collideY(player);
-  if(!player.wasGround && player.onGround) spawnFx('dust', player.x+player.w/2, player.y+player.h); // 着地煙
+  if(!player.wasGround && player.onGround){ spawnFx('dust', player.x+player.w/2, player.y+player.h); if(fallV>2.2) sfx('land'); } // 着地煙＋一定以上の落下で着地音
   player.wasGround=player.onGround;
   if(player.onGround && mv!==0) player.anim+=0.22; else player.anim=0;
 
@@ -352,6 +380,7 @@ function updatePlayer(){
     player.charge=0;
   }
   player.wasShoot=sh;
+  if(sh && player.charge>=8) chargeSnd(true, player.charge/60); else chargeSnd(false); // チャージ中のうなり(タップでは鳴らさない)
 
   if(player.inv>0)player.inv--;
   player.blink++;
