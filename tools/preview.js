@@ -60,8 +60,17 @@ clear(); G.start(); G.enemies.length=0; G.player.x=160; G.player.dir=1;
 for(let i=0;i<12;i++){G.hold('arrowright');G.step();}
 G.hold('x'); G.step(); G.release('x'); G.hold('arrowright'); G.step(); G.draw();
 { const dx=Math.round((G.player.x-G.camX)*RS); save(path.join(__dirname,'preview_runshoot_zoom.png'),[Math.max(0,dx-160),600,380,380,3]); }
-// boss（ボス部屋）
+// boss（ボス部屋・構え）
 clear(); G.start(); G.player.x=G.consts.BOSS_TRIGGER+5; for(let i=0;i<5;i++)G.step();
 G.boss.state='idle'; G.boss.timer=0; for(let i=0;i<12;i++)G.step(); G.draw();
 save(path.join(__dirname,'preview_boss.png'));
-console.log('preview saved (1920x1080): play/idle/run/left/shoot/charge/boss');
+{ const bx=Math.round((G.boss.x-G.camX)*RS); save(path.join(__dirname,'preview_boss_idle_zoom.png'),[Math.max(0,bx-180),300,760,760,2]); }
+// boss 溜め（専用キャノンcharge: timer<18）入場後に状態上書き
+clear(); G.start(); G.player.x=G.consts.BOSS_TRIGGER+5; for(let i=0;i<5;i++)G.step();
+G.boss.state='idle'; for(let i=0;i<12;i++)G.step(); G.boss.state='shoot'; G.boss.timer=8; G.draw();
+{ const bx=Math.round((G.boss.x-G.camX)*RS); save(path.join(__dirname,'preview_boss_charge_zoom.png'),[Math.max(0,bx-180),300,760,760,2]); }
+// boss 発射（専用キャノンfire: timer>=18）入場後に状態上書き
+clear(); G.start(); G.player.x=G.consts.BOSS_TRIGGER+5; for(let i=0;i<5;i++)G.step();
+G.boss.state='idle'; for(let i=0;i<12;i++)G.step(); G.boss.state='shoot'; G.boss.timer=30; G.draw();
+{ const bx=Math.round((G.boss.x-G.camX)*RS); save(path.join(__dirname,'preview_boss_fire_zoom.png'),[Math.max(0,bx-180),300,760,760,2]); }
+console.log('preview saved (1920x1080): play/idle/run/left/shoot/charge/boss/boss_charge/boss_fire');

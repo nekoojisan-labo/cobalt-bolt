@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-05-31 — [claude] リグ全パーツ統合・検証完了＝パーツ分割リグ稼働
+- Codex生成の全9パーツ(主人公 legs/body/arm_down/fire/charge＋ボス body/arm_idle/charge/fire)が揃い、**全パーツ揃いゲートが解けてリグが自動発動**。
+- preview目視で全状態OK: idle/run(down腕)・**走り撃ち=脚run+腕fire(伸ばしっぱなし)**・立ち撃ち/チャージ(蓄光弾)・ボス idle/溜め/発射(本体+専用キャノンが独立合成)。肩・腰・接地の継ぎ目ズレ無し→`ox/oy`調整不要。
+- `tools/preview.js` にボス検証シーン(idle_zoom/charge_zoom/fire_zoom, 入場12step後に状態上書き)を追加。`harness`=30/30。
+- これで「腕だけ動かす／走り撃ちで腕を伸ばしっぱなし／一枚絵の描き直しはしない」要望を満たした。push済。
+- **次タスク候補(任意)**: より滑らかにするなら腕に微小な反動(発射時1-2pxノックバック)や脚runコマ追加。必要時に。
+
 ## 2026-05-31 — [codex] rig: remaining player/boss parts
 - 置いた素材一覧:
   - `assets/rig_player_arm_down.png` — 256×256。前sideバスター腕のみ。既存 `rig_player_arm_fire.png` の肩リングを局所合成して肩位置を固定、腕だけ下げ姿勢。
