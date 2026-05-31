@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-05-31 - [codex] add sfx_shoot.mp3
+- File: `assets/sfx_shoot.mp3`
+- Source: OpenGameArt "Sound effects Mini Pack1.5" archive, internal file `Laser-weapon/MP3/Laser-weapon.mp3`; https://opengameart.org/content/sound-effects-mini-pack15
+- License: CC0.
+- Verification: MP3 frame scan passed (`bytes=5266`, `duration=0.233s`), not HTML/empty. `node harness.js` 28/28; `node tools/shot.js` rendered.
+
 ## 2026-05-31 — [claude] 弾が足場で止まる問題＆到達不能足場を修正
 - **弾が足場に当たって敵に届かない**→ 弾(自機/敵とも)は**薄い足場(h<40)を貫通**、地面/壁(h≥40)のみ阻む。テストT18追加。
 - **ジャンプで届かない足場**→ 高すぎた足場を**rise≤58の届く高さに統一**(例 S(420,124)→158、150台→158、146→160)。乗っていた敵位置も追従。
