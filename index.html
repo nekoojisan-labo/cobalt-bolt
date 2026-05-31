@@ -167,7 +167,7 @@ function manageBgm(){            // 毎フレーム呼ぶ（状態に応じてBG
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 // ★キャッシュ無効化: 素材PNGを差し替えたら ASSET_VER を変えると、ブラウザ/CDNが必ず新素材を取得する。
-const ASSET_VER = '2026053107';
+const ASSET_VER = '2026053108';
 function _av(s){ return s + (s.indexOf('?')<0 ? '?v=' : '&v=') + ASSET_VER; }
 const ASSETS = {
   // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
@@ -1001,7 +1001,9 @@ function drawPlayer(){
   const _standing = player.onGround && Math.abs(player.vx)<=0.1;
   if(_standing){
     const _anim = (player.inv>56)?'hurt' : (armState==='fire')?'shoot' : (armState==='charge')?'charge' : 'idle';
-    if(drawSheet('player', _anim, player.blink, footX, footY, player.dir)) return;
+    // 射撃は「構え」ポーズで固定(保持中はマズルでチラつかせない=発射FXに任せる)。連射しても都度ポーズが変わらない
+    const _fr = (_anim==='shoot') ? 0 : null;
+    if(drawSheet('player', _anim, player.blink, footX, footY, player.dir, _fr)) return;
   }
   // 走り/ジャンプ(=動きのある状態)は骨格アニメ
   drawPlayerSkel(footX, footY, player.dir);
