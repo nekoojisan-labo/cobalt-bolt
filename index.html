@@ -270,7 +270,8 @@ function drawRigPart(rig, part, f, footX, footY, dir){
 // プレイヤーをパーツ合成。必須(脚+胴)が揃わなければ false→コード描画へ。
 function drawPlayerRig(legState, armState, legFrame, armFrame, footX, footY, dir){
   const r=RIG.player, P=r.parts;
-  if(!P.legs.ready || !P.body.ready) return false;
+  // 全パーツが揃うまでは発動しない（前腕欠け等の半端表示を避け、従来の塗りへフォールバック）
+  if(!P.legs.ready || !P.body.ready || !P.arm_down.ready || !P.arm_fire.ready || !P.arm_charge.ready) return false;
   const armKey = armState==='charge'?'arm_charge' : armState==='fire'?'arm_fire' : 'arm_down';
   const arm = P[armKey] && P[armKey].ready ? P[armKey] : (P.arm_down.ready?P.arm_down:null);
   const lf = r.legMap[legState] || r.legMap.idle;
@@ -282,7 +283,7 @@ function drawPlayerRig(legState, armState, legFrame, armFrame, footX, footY, dir
 // ボスをパーツ合成。必須(本体)が無ければ false→コード描画へ。
 function drawBossRig(armState, footX, footY, dir, t){
   const r=RIG.boss, P=r.parts;
-  if(!P.body.ready) return false;
+  if(!P.body.ready || !P.arm_idle.ready || !P.arm_charge.ready || !P.arm_fire.ready) return false;
   const armKey = armState==='charge'?'arm_charge' : armState==='fire'?'arm_fire' : 'arm_idle';
   const arm = P[armKey] && P[armKey].ready ? P[armKey] : (P.arm_idle.ready?P.arm_idle:null);
   drawRigPart(r, P.body, t*0.08, footX, footY, dir);                  // 本体(奥)
