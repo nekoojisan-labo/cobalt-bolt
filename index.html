@@ -167,7 +167,7 @@ function manageBgm(){            // 毎フレーム呼ぶ（状態に応じてBG
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 // ★キャッシュ無効化: 素材PNGを差し替えたら ASSET_VER を変えると、ブラウザ/CDNが必ず新素材を取得する。
-const ASSET_VER = '2026060102';
+const ASSET_VER = '2026060201';
 function _av(s){ return s + (s.indexOf('?')<0 ? '?v=' : '&v=') + ASSET_VER; }
 const ASSETS = {
   // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
