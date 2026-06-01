@@ -1012,17 +1012,17 @@ function drawPlayer(){
   const legFrame = legState==='run' ? Math.floor(player.anim) : 0;
   const armFrame = armState==='charge' ? Math.floor(player.blink/4) : 0;
   const footX = player.x-camX+player.w/2, footY = player.y+player.h;
-  // 静止(立ち/立ち撃ち/チャージ/ジャンプは射撃以外)は元の主人公1枚絵=デザイン・ポーズ完全一致。
-  // 走り(脚を動かす)は骨格で滑らかに。これで「よく見る立ち姿=元の主人公」「走り=正しい動き」を両立。
-  const _standing = player.onGround && Math.abs(player.vx)<=0.1;
-  if(_standing){
-    const _anim = (player.inv>56)?'hurt' : (armState==='fire')?'shoot' : (armState==='charge')?'charge' : 'idle';
-    // 射撃は「構え」ポーズで固定(保持中はマズルでチラつかせない=発射FXに任せる)。連射しても都度ポーズが変わらない
-    const _fr = (_anim==='shoot') ? 0 : null;
-    if(drawSheet('player', _anim, player.blink, footX, footY, player.dir, _fr)) return;
-  }
-  // 走り/ジャンプ(=動きのある状態)は骨格アニメ
-  drawPlayerSkel(footX, footY, player.dir);
+  // 全状態を「ちゃんと描いた1枚絵(フルフレーム)」で描画＝体の作り(解剖学)を保つ。MMX流のフレームアニメ。
+  const _anim = legState==='hurt' ? 'hurt'
+    : legState==='jump' ? (armState==='fire' && ASSETS.player.anims.jumpshoot ? 'jumpshoot' : 'jump')
+    : legState==='run'  ? (armState==='fire' && ASSETS.player.anims.runshoot ? 'runshoot' : 'run')
+    : armState==='fire' ? 'shoot'
+    : armState==='charge'? 'charge'
+    : 'idle';
+  // ジャンプは上下速度でフレーム固定、立ち撃ちは構えポーズ固定(マズルは発射FXに任せる)
+  const _fr = (legState==='jump') ? (player.vy<0?0:1) : ((_anim==='shoot') ? 0 : null);
+  if(drawSheet('player', _anim, player.blink, footX, footY, player.dir, _fr)) return;
+  drawPlayerSkel(footX, footY, player.dir);   // 素材未配置時のみ骨格(フォールバック)
   return;
   // ===== 以下は旧コード描画リグ(未使用) =====
   const x=Math.round(player.x-camX), y=Math.round(player.y), d=player.dir;
