@@ -96,7 +96,7 @@ for(let i=0;i<22;i++)G.step(); G.draw();   // timer18で発射→弾がキャノ
 // 骨格 走りサイクル 8位相フィルムストリップ(手足が交互に動くか確認)
 clear(); G.start(); G.enemies.length=0; G.player.x=300; for(let i=0;i<6;i++)G.step();
 G.player.onGround=true; G.player.vx=3.2; G.player.fireHold=0; G.player.charge=0;
-for(let i=0;i<8;i++){ clear(); G.player.anim=i*0.92; G.draw();
+for(let i=0;i<8;i++){ clear(); G.player.anim=i*0.92; G.player.blink=Math.round(i*60/18)+1; G.draw();
   const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS);
   save(path.join(__dirname,'preview_skelrun'+i+'.png'),[Math.max(0,dx-70),700,150,180,4]); }
 // 骨格 走り撃ち(fireHoldで腕前方保持・脚は走り)
