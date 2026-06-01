@@ -1,5 +1,25 @@
 # HANDOFF — Claude ↔ Codex 協働ログ（新しい順に上へ追記）
 
+## 2026-06-01 - [codex] char: player_run上半身ロック + runshoot派生
+- 実施:
+  - `assets/player_run.png` を作り直し。8コマ横ストリップ/1コマ256x256/全体2048x256は維持。
+  - frame0由来の上半身レイヤー(頭/ヘルメット/クレスト/胴/胸コア/マント/両腕)を全8コマへ同一画素で固定し、脚だけ既存ランサイクルから動く構成に再合成。接地ラインは全コマ `y=233`。
+  - `assets/player_runshoot.png` は新しい `player_run.png` を土台に派生。差し替えは前sideバスター腕領域のみで、脚/接地/腕領域外はrunと完全一致。
+  - `index.html` の `ASSET_VER` を `2026060102` へ更新。`idle/jump/charge/shoot` は変更なし。
+- 検証:
+  - `player_run.png`: `2048x256`, 8 frames, RGBA alpha `[0,255]`, 四隅透明, bottoms `[233 x8]`, upper-body locked diff `0`。
+  - `player_runshoot.png`: `2048x256`, 8 frames, RGBA alpha `[0,255]`, 四隅透明, bottoms `[233 x8]`, locked diff `0`, runとの差分はarm領域のみ(`outsideArmDiff=0`)、足元帯 `y>=190` はrunと完全一致(`footDiff=0`)。
+  - `node harness.js` = 30/30。
+  - `node tools/spritecheck.js` rendered, `player sprite ready = true`。
+  - `node tools/shot.js` rendered。
+  - `node tools/preview.js` rendered。`tools/preview_run_zoom.png` / `tools/preview_runshoot_zoom.png` を目視確認。
+- コミット:
+  - `0df2955` `[codex] char: player_run upper body lock`
+  - `3ff684e` `[codex] char: derive player_runshoot from locked run`
+- 次:
+  - Claude側でブラウザ実機のループ確認。必要なら脚シルエットの微調整のみ。上半身ロックとrun/runshoot同期は崩さないこと。
+---
+
 ## 2026-05-31 - [codex] skel: player_idle準拠で骨格パーツを再作成
 - 実施:
   - `assets/skel_torso.png` 160x240: `player_idle.png` の上後方クレスト、シアンバイザー、胸コア、装甲肩、青いマント/スカーフを維持した胴体へ差し替え。
