@@ -96,12 +96,25 @@ for(let i=0;i<22;i++)G.step(); G.draw();   // timer18で発射→弾がキャノ
 // 骨格 走りサイクル 8位相フィルムストリップ(手足が交互に動くか確認)
 clear(); G.start(); G.enemies.length=0; G.player.x=300; for(let i=0;i<6;i++)G.step();
 G.player.onGround=true; G.player.vx=3.2; G.player.fireHold=0; G.player.charge=0;
-for(let i=0;i<8;i++){ clear(); G.player.anim=i*0.92; G.player.blink=Math.round(i*60/18)+1; G.draw();
+for(let i=0;i<8;i++){ clear(); G.player.anim=i*G.motion.runCycleDistance/8; G.player.blink=Math.round(i*60/18)+1; G.player.visualPose=null; G.draw();
   const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS);
   save(path.join(__dirname,'preview_skelrun'+i+'.png'),[Math.max(0,dx-70),700,150,180,4]); }
 // 骨格 走り撃ち(fireHoldで腕前方保持・脚は走り)
-clear(); G.player.fireHold=18; G.player.charge=0; G.player.anim=2; G.draw();
+clear(); G.player.fireHold=18; G.player.charge=0; G.player.anim=G.motion.runCycleDistance*0.25; G.player.visualPose=null; G.draw();
 { const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS); save(path.join(__dirname,'preview_skelrunshoot.png'),[Math.max(0,dx-80),700,180,180,4]); }
+// ジャンプ5段階（沈み込み→上昇→頂点→下降→着地）
+const jumpPoses=[
+  {name:'takeoff',onGround:false,vy:-7,jumpAge:1,landT:0,y:158},
+  {name:'ascent',onGround:false,vy:-5,jumpAge:6,landT:0,y:142},
+  {name:'apex',onGround:false,vy:0,jumpAge:14,landT:0,y:132},
+  {name:'descent',onGround:false,vy:5,jumpAge:22,landT:0,y:150},
+  {name:'landing',onGround:true,vy:0,jumpAge:0,landT:8,y:192},
+];
+for(const jp of jumpPoses){
+  clear(); Object.assign(G.player,jp,{vx:3.2,fireHold:0,charge:0,visualPose:null}); G.draw();
+  const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS), fy=Math.round((G.player.y+G.player.h)*RS);
+  save(path.join(__dirname,'preview_jump_'+jp.name+'.png'),[Math.max(0,dx-90),Math.max(0,fy-190),190,210,4]);
+}
 // 骨格 走りチャージ(白■バグ確認=チャージ弾スプライトが出るはず)
 clear(); G.player.fireHold=0; G.player.charge=45; G.player.anim=2; G.draw();
 { const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS); save(path.join(__dirname,'preview_skelruncharge.png'),[Math.max(0,dx-90),690,210,200,4]); }

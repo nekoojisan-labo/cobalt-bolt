@@ -381,11 +381,13 @@ const hazards=[
 //  弾
 //======================================================================
 const pBullets=[], eBullets=[];
-function shootP(x,y,dir,charge){
-  pBullets.push({x,y,w:charge?13:8,h:charge?13:5,vx:dir*(charge?6.5:8),dmg:charge?5:1,charge,life:90});
-  spawnFx('muzzle', x+dir*4, y+(charge?6:2), dir);
+function shootP(dir,charge){
+  const muzzle=getPlayerMuzzleWorld();
+  const w=charge?13:8, h=charge?13:5;
+  const x=muzzle.x+(dir<0?-w:0), y=muzzle.y-h/2;
+  pBullets.push({x,y,w,h,originX:muzzle.x,originY:muzzle.y,vx:dir*(charge?6.5:8),dmg:charge?5:1,charge,life:90});
+  spawnFx('muzzle', muzzle.x, muzzle.y, dir);
   sfx(charge?'chargeshot':'shoot');
-  player.fireHold=30;   // 発射後この間は射撃ポーズ(腕前方)を保持。連射の合間に元ポーズへ戻らないよう硬直を長めに(約0.5秒)
 }
 function shootE(x,y,vx,vy,c='#ff5a4a'){ eBullets.push({x,y,w:7,h:7,vx,vy,c,life:300}); }
 
@@ -395,11 +397,11 @@ function shootE(x,y,vx,vy,c='#ff5a4a'){ eBullets.push({x,y,w:7,h:7,vx,vy,c,life:
 const PW=18, PH=24;
 const player={x:80,y:GROUND_Y-PH,w:PW,h:PH,vx:0,vy:0,dir:1,onGround:false,
   hp:24,maxhp:24,inv:0,shootCD:0,charge:0,wasShoot:false,fireHold:0,
-  dead:false,deadT:0,coyote:0,jumpBuf:0,anim:0,blink:0};
+  dead:false,deadT:0,coyote:0,jumpBuf:0,anim:0,blink:0,jumpAge:0,landT:0,wasGround:false,visualPose:null};
 function resetPlayer(){
   Object.assign(player,{x:80,y:GROUND_Y-PH,vx:0,vy:0,dir:1,onGround:false,
     hp:24,maxhp:24,inv:0,shootCD:0,charge:0,wasShoot:false,fireHold:0,
-    dead:false,deadT:0,coyote:0,jumpBuf:0,anim:0,blink:0});
+    dead:false,deadT:0,coyote:0,jumpBuf:0,anim:0,blink:0,jumpAge:0,landT:0,wasGround:false,visualPose:null});
 }
 
 const GRAV=0.5, MOVE=3.2, JUMP=-8.6, TERM=9;   // MOVE: 歩き2.3→ダッシュ3.2
@@ -429,6 +431,7 @@ function updatePlayer(){
   if(PRESS[KJUMP])player.jumpBuf=6; else if(player.jumpBuf>0)player.jumpBuf--;
   if(player.jumpBuf>0 && player.coyote>0){
     player.vy=JUMP; player.jumpBuf=0; player.coyote=0; player.onGround=false; sfx('jump');
+    player.jumpAge=0;
     spawnFx('dust', player.x+player.w/2, player.y+player.h);
   }
   if(!keys[KJUMP] && player.vy<-3) player.vy=-3; // 可変ジャンプ
@@ -436,27 +439,38 @@ function updatePlayer(){
   collideX(player);
   const fallV=player.vy;                 // 着地判定用に落下速度を退避(collideYでvyが0になる前)
   collideY(player);
-  if(!player.wasGround && player.onGround){ spawnFx('dust', player.x+player.w/2, player.y+player.h); if(fallV>2.2) sfx('land'); } // 着地煙＋一定以上の落下で着地音
+  if(!player.wasGround && player.onGround){
+    player.landT=fallV>2.2?8:5;
+    spawnFx('dust', player.x+player.w/2, player.y+player.h);
+    if(fallV>2.2) sfx('land');
+  }
   player.wasGround=player.onGround;
-  if(player.onGround && mv!==0) player.anim+=0.34; else player.anim=0;   // 脚アニメをダッシュ相当に速く
+  if(player.onGround){ player.jumpAge=0; if(player.landT>0)player.landT--; }
+  else player.jumpAge++;
+  if(player.onGround && mv!==0) player.anim+=Math.abs(player.vx);   // 走行位相を経過時間ではなく移動距離へ連動
 
   // ショット
   if(player.shootCD>0)player.shootCD--;
+  if(player.fireHold>0)player.fireHold--;
   const sh=!!keys[KSHOOT];
+  let pendingShot=null;
   if(sh)player.charge=Math.min(player.charge+1,60);
   if(PRESS[KSHOOT] && player.shootCD<=0){           // 押した瞬間に通常弾
-    shootP(player.x+(player.dir>0?20:-12), player.y-3, player.dir, false);   // 塗り2D砲口に合わせた発射位置
+    player.fireHold=30;
+    pendingShot=false;
     player.shootCD=11;
   }
   if(player.wasShoot && !sh){                        // 離した瞬間：チャージ判定
-    if(player.charge>=40) shootP(player.x+(player.dir>0?16:-16), player.y-7, player.dir, true);
+    if(player.charge>=40){ player.fireHold=30; pendingShot=true; }
     player.charge=0;
   }
   player.wasShoot=sh;
   if(sh && player.charge>=8) chargeSnd(true, player.charge/60); else chargeSnd(false); // チャージ中のうなり(タップでは鳴らさない)
 
+  updatePlayerVisualPose();
+  if(pendingShot!==null) shootP(player.dir,pendingShot);
+
   if(player.inv>0)player.inv--;
-  if(player.fireHold>0)player.fireHold--;
   player.blink++;
 
   if(player.y>H+60) hurt(99,true);  // 落下死
@@ -478,7 +492,7 @@ function boom(x,y,col){ for(let i=0;i<10;i++){const a=i/10*Math.PI*2;fx.push({x,
 function updateFx(){ for(const p of fx){p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life--;} for(let i=fx.length-1;i>=0;i--)if(fx[i].life<=0)fx.splice(i,1); }
 // ---- 画像エフェクト（assets配置で有効・無ければ上のパーティクルのみ）----
 const FX_SPR = {
-  muzzle   :{src:'assets/fx_muzzle.png',    frames:3, fps:30, size:36},
+  muzzle   :{src:'assets/fx_muzzle.png',    frames:3, fps:30, size:24},
   hit      :{src:'assets/fx_hit.png',       frames:4, fps:28, size:30},
   explosion:{src:'assets/fx_explosion.png', frames:8, fps:22, size:64},
   dust     :{src:'assets/fx_dust.png',      frames:5, fps:22, size:38},
@@ -936,7 +950,237 @@ function drawSkelArm(sx,sy,sh,el,UA,FA,col,hi,buster,fire,charge,uaP,faP){
     ctx.restore();   // 発射マズルはspawnFx('muzzle')に任せる(保持中は常時光らせない)
   }
 }
-function drawPlayerSkel(footX, footY, dir){
+
+// ====== 全身モーションリグ ======
+// 骨盤をルートにして、脚・体幹・肩・腕・砲口を同じポーズから計算する。
+// 描画と弾の発射位置は getPlayerPoseAnchors() を共有し、別々の座標計算にしない。
+const PLAYER_RIG_LENGTHS={thigh:7.6,shin:9.3,upperArm:5.8,forearm:7.5,buster:7.25};
+const RUN_CYCLE_DISTANCE=64;
+const PLAYER_POSE_KEYS=[
+  'pelvisX','pelvisY','torsoLean',
+  'nearFootX','nearFootY','farFootX','farFootY',
+  'nearUpper','nearLower','farUpper','farLower',
+];
+const _poseMod=(n,m)=>((n%m)+m)%m;
+const _poseEase=t=>t*t*(3-2*t);
+
+function runFootTarget(phase){
+  const p=_poseMod(phase,1);
+  if(p<0.18){
+    const t=p/0.18;
+    return {x:5-10*t,y:-0.6,contact:true};
+  }
+  if(p<0.30){
+    const t=(p-0.18)/0.12;
+    return {x:-5-2*t,y:-0.6-Math.sin(t*Math.PI/2)*2.2,contact:false};
+  }
+  if(p<0.86){
+    const t=(p-0.30)/0.56, e=_poseEase(t);
+    return {x:-7+14*e,y:-2.8-Math.sin(t*Math.PI)*4.5,contact:false};
+  }
+  const t=(p-0.86)/0.14;
+  return {x:7-2*t,y:-2.8+(2.2*t),contact:false};
+}
+
+function computePlayerPose(source){
+  const p=source||player;
+  const moving=Math.abs(p.vx||0)>0.1;
+  let mode='idle';
+  if(p.onGround && (p.landT||0)>0) mode='landing';
+  else if(!p.onGround && (p.jumpAge||0)<=3) mode='takeoff';
+  else if(!p.onGround && p.vy<-1.5) mode='ascent';
+  else if(!p.onGround && p.vy<=1.5) mode='apex';
+  else if(!p.onGround) mode='descent';
+  else if(moving) mode='run';
+
+  const pose={
+    mode,armMode:'down',phase:0,
+    pelvisX:0,pelvisY:-15.8,torsoLean:0.02,
+    nearFootX:3.2,nearFootY:-0.6,farFootX:-3.2,farFootY:-0.6,
+    nearUpper:0.25,nearLower:0.10,farUpper:-0.12,farLower:0.12,
+  };
+
+  if(mode==='run'){
+    const phase=_poseMod((p.anim||0)/RUN_CYCLE_DISTANCE,1);
+    const near=runFootTarget(phase), far=runFootTarget(phase+0.5);
+    const wave=Math.sin(phase*Math.PI*2);
+    pose.phase=phase;
+    pose.pelvisY=-15.8+Math.abs(Math.sin(phase*Math.PI*2))*0.48;
+    pose.torsoLean=0.16+wave*0.025;
+    pose.nearFootX=near.x; pose.nearFootY=near.y;
+    pose.farFootX=far.x; pose.farFootY=far.y;
+    // 肩は脚と逆位相。肘も同じ親子鎖の中で追従する。
+    pose.nearUpper=0.28-wave*0.62;
+    pose.nearLower=pose.nearUpper*0.55+0.18;
+    pose.farUpper=0.28+wave*0.62;
+    pose.farLower=pose.farUpper*0.55+0.18;
+  }else if(mode==='takeoff'){
+    pose.pelvisY=-13.4; pose.torsoLean=0.11;
+    pose.nearFootX=4.0; pose.farFootX=-4.0;
+    pose.nearUpper=0.65; pose.nearLower=0.35;
+    pose.farUpper=-0.45; pose.farLower=-0.12;
+  }else if(mode==='ascent'){
+    pose.pelvisY=-15.3; pose.torsoLean=0.14;
+    pose.nearFootX=3.0; pose.nearFootY=-5.0;
+    pose.farFootX=-4.2; pose.farFootY=-3.6;
+    pose.nearUpper=0.82; pose.nearLower=0.38;
+    pose.farUpper=-0.38; pose.farLower=-0.08;
+  }else if(mode==='apex'){
+    pose.pelvisY=-15.0; pose.torsoLean=0.08;
+    pose.nearFootX=4.4; pose.nearFootY=-6.0;
+    pose.farFootX=-3.3; pose.farFootY=-5.0;
+    pose.nearUpper=0.58; pose.nearLower=0.22;
+    pose.farUpper=-0.22; pose.farLower=0.08;
+  }else if(mode==='descent'){
+    pose.pelvisY=-16.0; pose.torsoLean=0.03;
+    pose.nearFootX=4.2; pose.nearFootY=-1.2;
+    pose.farFootX=-4.2; pose.farFootY=-1.8;
+    pose.nearUpper=0.32; pose.nearLower=0.16;
+    pose.farUpper=-0.08; pose.farLower=0.18;
+  }else if(mode==='landing'){
+    const compression=Math.max(0,Math.min(1,(p.landT||0)/8));
+    pose.pelvisY=-15.8+compression*3.0;
+    pose.torsoLean=0.10*compression;
+    pose.nearFootX=4.0; pose.farFootX=-4.0;
+    pose.nearUpper=0.42; pose.nearLower=0.20;
+    pose.farUpper=-0.24; pose.farLower=0.08;
+  }else{
+    const breathe=Math.sin((p.blink||0)*0.05);
+    pose.pelvisY=-15.8+breathe*0.18;
+    pose.torsoLean=0.025+breathe*0.008;
+  }
+
+  const charging=(p.charge||0)>=8, firing=(p.fireHold||0)>0;
+  if(charging||firing){
+    const recoil=firing?Math.max(0,Math.min(1,((p.fireHold||0)-22)/8)):0;
+    pose.armMode=charging?'charge':'fire';
+    pose.nearUpper=1.18-recoil*0.08;
+    pose.nearLower=1.50-recoil*0.04;
+    pose.farUpper=-0.12;
+    pose.farLower=0.18;
+    pose.torsoLean=Math.min(pose.torsoLean,0.08)-recoil*0.055;
+    pose.pelvisX-=recoil*0.45;
+  }
+  return pose;
+}
+
+function blendPlayerPose(current,target){
+  if(!current) return {...target};
+  const next={...current,mode:target.mode,armMode:target.armMode,phase:target.phase};
+  const bodyAlpha=target.mode==='landing'?0.48:0.34;
+  for(const key of PLAYER_POSE_KEYS){
+    let alpha=bodyAlpha;
+    if(key.includes('Foot')) alpha=target.mode==='run'?0.72:0.46;
+    if((key==='nearUpper'||key==='nearLower') && target.armMode!=='down') alpha=1;
+    next[key]=current[key]+(target[key]-current[key])*alpha;
+  }
+  return next;
+}
+
+function updatePlayerVisualPose(){
+  player.visualPose=blendPlayerPose(player.visualPose,computePlayerPose(player));
+  return player.visualPose;
+}
+
+function solveTwoBone(root,target,upperLength,lowerLength,bend=1){
+  let dx=target.x-root.x, dy=target.y-root.y;
+  const rawDistance=Math.hypot(dx,dy)||0.0001;
+  const distance=clamp(rawDistance,Math.abs(upperLength-lowerLength)+0.001,upperLength+lowerLength-0.001);
+  dx/=rawDistance; dy/=rawDistance;
+  const foot={x:root.x+dx*distance,y:root.y+dy*distance};
+  const along=(upperLength*upperLength-lowerLength*lowerLength+distance*distance)/(2*distance);
+  const height=Math.sqrt(Math.max(0,upperLength*upperLength-along*along));
+  const knee={x:root.x+dx*along+dy*height*bend,y:root.y+dy*along-dx*height*bend};
+  return {root,knee,foot};
+}
+
+function getPlayerPoseAnchors(pose,footX,footY,dir=1){
+  const pelvis={x:footX+pose.pelvisX,y:footY+pose.pelvisY};
+  const c=Math.cos(pose.torsoLean),s=Math.sin(pose.torsoLean);
+  const torsoPoint=(side,up)=>({x:pelvis.x+side*c+up*s,y:pelvis.y+side*s-up*c});
+  const nearHip={x:pelvis.x+2.2,y:pelvis.y+0.2};
+  const farHip={x:pelvis.x-1.35,y:pelvis.y+0.2};
+  const nearLeg=solveTwoBone(nearHip,{x:footX+pose.nearFootX,y:footY+pose.nearFootY},PLAYER_RIG_LENGTHS.thigh,PLAYER_RIG_LENGTHS.shin,1);
+  const farLeg=solveTwoBone(farHip,{x:footX+pose.farFootX,y:footY+pose.farFootY},PLAYER_RIG_LENGTHS.thigh,PLAYER_RIG_LENGTHS.shin,1);
+  // 横向きの遠近を反映し、奥肩は胴に隠し、手前肩は首から十分離す。
+  const nearShoulder=torsoPoint(3.7,11.9), farShoulder=torsoPoint(-1.8,11.9);
+  const nearElbow={
+    x:nearShoulder.x+Math.sin(pose.nearUpper)*PLAYER_RIG_LENGTHS.upperArm,
+    y:nearShoulder.y+Math.cos(pose.nearUpper)*PLAYER_RIG_LENGTHS.upperArm,
+  };
+  const muzzle={
+    x:nearElbow.x+Math.sin(pose.nearLower)*PLAYER_RIG_LENGTHS.buster,
+    y:nearElbow.y+Math.cos(pose.nearLower)*PLAYER_RIG_LENGTHS.buster,
+  };
+  const farElbow={
+    x:farShoulder.x+Math.sin(pose.farUpper)*PLAYER_RIG_LENGTHS.upperArm,
+    y:farShoulder.y+Math.cos(pose.farUpper)*PLAYER_RIG_LENGTHS.upperArm,
+  };
+  const farHand={
+    x:farElbow.x+Math.sin(pose.farLower)*PLAYER_RIG_LENGTHS.forearm,
+    y:farElbow.y+Math.cos(pose.farLower)*PLAYER_RIG_LENGTHS.forearm,
+  };
+  const anchors={pelvis,nearHip,nearKnee:nearLeg.knee,nearFoot:nearLeg.foot,
+    farHip,farKnee:farLeg.knee,farFoot:farLeg.foot,
+    nearShoulder,nearElbow,muzzle,farShoulder,farElbow,farHand};
+  if(dir<0){
+    for(const point of Object.values(anchors)) point.x=footX-(point.x-footX);
+  }
+  return anchors;
+}
+
+function getPlayerMuzzleWorld(){
+  const pose=player.visualPose||computePlayerPose(player);
+  const footX=player.x+player.w/2, footY=player.y+player.h;
+  return getPlayerPoseAnchors(pose,footX,footY,player.dir).muzzle;
+}
+
+function _segmentBetween(a,b,w,col,hi,part){
+  const angle=Math.atan2(b.x-a.x,b.y-a.y);
+  return _limb(a.x,a.y,angle,Math.hypot(b.x-a.x,b.y-a.y),w,col,hi,part);
+}
+
+function drawPlayerArticulated(footX,footY,dir){
+  const pose=player.visualPose||updatePlayerVisualPose();
+  const a=getPlayerPoseAnchors(pose,footX,footY,1);
+  const O='#0a1230',B='#2f6df0',BH='#7fb0ff',BF='#274f93';
+  ctx.save();
+  ctx.globalAlpha=0.22;
+  ctx.fillStyle='#020611';
+  ctx.beginPath(); ctx.ellipse(footX,footY+0.6,6.2,1.4,0,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha=1;
+  if(dir<0){ctx.translate(footX*2,0);ctx.scale(-1,1);}
+
+  ctx.save(); ctx.globalAlpha=0.78;
+  _segmentBetween(a.farHip,a.farKnee,4.6,BF,null,SKEL.thigh);
+  _segmentBetween(a.farKnee,a.farFoot,3.9,BF,null,SKEL.shin);
+  _segmentBetween(a.farShoulder,a.farElbow,3.7,BF,null,SKEL.uarm);
+  _segmentBetween(a.farElbow,a.farHand,3.3,BF,null,SKEL.farm);
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(a.pelvis.x,a.pelvis.y);
+  ctx.rotate(pose.torsoLean);
+  ctx.drawImage(SKEL.torso.img,0,0,SKEL.torso.img.width,SKEL.torso.img.height,
+    -SKEL.torso.bw/2,-SKEL.torso.bh+1.2,SKEL.torso.bw,SKEL.torso.bh);
+  ctx.restore();
+
+  _segmentBetween(a.nearHip,a.nearKnee,4.6,B,BH,SKEL.thigh);
+  _segmentBetween(a.nearKnee,a.nearFoot,3.9,B,BH,SKEL.shin);
+  _segmentBetween(a.nearShoulder,a.nearElbow,3.7,B,BH,SKEL.uarm);
+  _segmentBetween(a.nearElbow,a.muzzle,5.2,B,BH,SKEL.buster);
+
+  if(pose.armMode==='charge'){
+    const co=getImg(BULLET_SPR.charge.src),size=player.charge>=40?7.5:4.5+(player.charge/40)*3;
+    if(co&&co.ready&&co.img){
+      const fw=co.img.width/(BULLET_SPR.charge.frames||1);
+      ctx.drawImage(co.img,0,0,fw,co.img.height,a.muzzle.x-size/2,a.muzzle.y-size/2,size,size);
+    }
+  }
+  ctx.restore();
+}
+
+function drawPlayerSkelFallback(footX, footY, dir){
   const onG=player.onGround, mvg=Math.abs(player.vx)>0.1;
   const firing=player.fireHold>0, charging=player.charge>=8;
   const st = !onG ? 'jump' : mvg ? 'run' : 'idle';
@@ -1012,7 +1256,12 @@ function drawPlayer(){
   const legFrame = legState==='run' ? Math.floor(player.anim) : 0;
   const armFrame = armState==='charge' ? Math.floor(player.blink/4) : 0;
   const footX = player.x-camX+player.w/2, footY = player.y+player.h;
-  // 全状態を「ちゃんと描いた1枚絵(フルフレーム)」で描画＝体の作り(解剖学)を保つ。MMX流のフレームアニメ。
+  // 通常経路は全身関節リグ。既存フルフレームはパーツ欠損時だけの安全なフォールバック。
+  if(skelReady()){
+    drawPlayerArticulated(footX,footY,player.dir);
+    return;
+  }
+  // 関節パーツ欠損時は既存フルフレームへフォールバック。
   const _anim = legState==='hurt' ? 'hurt'
     : legState==='jump' ? (armState==='fire' && ASSETS.player.anims.jumpshoot ? 'jumpshoot' : 'jump')
     : legState==='run'  ? (armState==='fire' && ASSETS.player.anims.runshoot ? 'runshoot' : 'run')
@@ -1022,7 +1271,7 @@ function drawPlayer(){
   // ジャンプは上下速度でフレーム固定、立ち撃ちは構えポーズ固定(マズルは発射FXに任せる)
   const _fr = (legState==='jump') ? (player.vy<0?0:1) : ((_anim==='shoot') ? 0 : null);
   if(drawSheet('player', _anim, player.blink, footX, footY, player.dir, _fr)) return;
-  drawPlayerSkel(footX, footY, player.dir);   // 素材未配置時のみ骨格(フォールバック)
+  drawPlayerSkelFallback(footX, footY, player.dir);   // 全画像が欠損した場合のみコード描画
   return;
   // ===== 以下は旧コード描画リグ(未使用) =====
   const x=Math.round(player.x-camX), y=Math.round(player.y), d=player.dir;
@@ -1273,6 +1522,14 @@ if(typeof globalThis!=='undefined'){
     start:startGame,
     draw(){ render(); },                                          // 現在状態を描画（スクショ検証用）
     assets:ASSETS, loadAssets,                                    // スプライト検証用
+    motion:{
+      computePose:computePlayerPose,
+      getAnchors:getPlayerPoseAnchors,
+      getPlayerMuzzle:getPlayerMuzzleWorld,
+      solveTwoBone,
+      lengths:PLAYER_RIG_LENGTHS,
+      runCycleDistance:RUN_CYCLE_DISTANCE,
+    },
     set state(v){ state=v; },                                     // テスト用に画面状態を直接指定
     step(){ update(); for(const k in PRESS)PRESS[k]=false; },     // 1フレーム進める（描画なし）
     hold(k){ if(!keys[k])PRESS[k]=true; keys[k]=true; },

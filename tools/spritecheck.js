@@ -56,6 +56,7 @@ const ctx={imageSmoothingEnabled:false,fillStyle:'#000',font:'',textAlign:'left'
   scale(ax,ay){t.a*=ax;t.b*=ax;t.c*=ay;t.d*=ay;},
   rotate(r){const co=Math.cos(r),si=Math.sin(r),a=t.a,b=t.b,c=t.c,d=t.d;t.a=a*co+c*si;t.b=b*co+d*si;t.c=-a*si+c*co;t.d=-b*si+d*co;},
   setTransform(a,b,c,d,e,f){t={a,b,c,d,e,f};},
+  beginPath(){},closePath(){},moveTo(){},lineTo(){},stroke(){},arc(){},ellipse(){},fill(){},
   createLinearGradient(x0,y0,x1,y1){return{__grad:true,p0:dev(x0,y0),p1:dev(x1,y1),stops:[],addColorStop(o,c){this.stops.push({o,c:parseColor(c)});}};},
   fillRect(x,y,w,h){const c0=dev(x,y),c1=dev(x+w,y),c2=dev(x+w,y+h),c3=dev(x,y+h);
     const x0=Math.floor(Math.min(c0.x,c1.x,c2.x,c3.x)),x1=Math.ceil(Math.max(c0.x,c1.x,c2.x,c3.x)),y0=Math.floor(Math.min(c0.y,c1.y,c2.y,c3.y)),y1=Math.ceil(Math.max(c0.y,c1.y,c2.y,c3.y));const fs=this.fillStyle;
