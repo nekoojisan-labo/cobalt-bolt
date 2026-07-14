@@ -1009,10 +1009,10 @@ function computePlayerPose(source){
 
   const pose={
     mode,armMode:'down',actionPose:'none',phase:0,
-    pelvisX:0,pelvisY:-15.8,torsoLean:0.02,
+    pelvisX:0,pelvisY:-17.2,torsoLean:0,
     nearFootX:3.2,nearFootY:-0.6,farFootX:-3.2,farFootY:-0.6,
-    // 通常立ちも肩→肘→前腕の折れを見せ、棒状に垂らさない。
-    nearUpper:-0.18,nearLower:0.48,farUpper:0.18,farLower:-0.32,
+    // 通常立ちは肩の下で肘を軽く緩め、両腕が胸前へ寄りすぎないようにする。
+    nearUpper:0.18,nearLower:-0.10,farUpper:-0.16,farLower:0.10,
   };
 
   if(mode==='run'){
@@ -1061,8 +1061,9 @@ function computePlayerPose(source){
     pose.farUpper=-0.24; pose.farLower=0.08;
   }else{
     const breathe=Math.sin((p.blink||0)*0.05);
-    pose.pelvisY=-15.8+breathe*0.18;
-    pose.torsoLean=0.025+breathe*0.008;
+    // 通常立ちは足裏を固定したまま膝を軽く緩め、骨盤・胸・頭を縦に積む。
+    pose.pelvisY=-17.2+breathe*0.10;
+    pose.torsoLean=breathe*0.003;
   }
 
   const charging=(p.charge||0)>=8, firing=(p.fireHold||0)>0;

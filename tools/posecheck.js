@@ -41,6 +41,15 @@ function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
+function jointFlexDegrees(root, joint, end) {
+  const upper = { x: root.x - joint.x, y: root.y - joint.y };
+  const lower = { x: end.x - joint.x, y: end.y - joint.y };
+  const cosine = (upper.x * lower.x + upper.y * lower.y)
+    / (Math.hypot(upper.x, upper.y) * Math.hypot(lower.x, lower.y));
+  const inner = Math.acos(Math.max(-1, Math.min(1, cosine))) * 180 / Math.PI;
+  return 180 - inner;
+}
+
 console.log('\n==== COBALT 全身関節リグ検証 ====');
 check('関節モーションAPIが公開されている', !!motion);
 if (!motion) process.exit(1);
@@ -70,11 +79,42 @@ check(
 );
 
 const idlePose = motion.computePose({ ...base, vx: 0 });
+const idleAnchors = motion.getAnchors(idlePose, 100, 216, 1);
+const idleNearKneeFlex = jointFlexDegrees(idleAnchors.nearHip, idleAnchors.nearKnee, idleAnchors.nearFoot);
+const idleFarKneeFlex = jointFlexDegrees(idleAnchors.farHip, idleAnchors.farKnee, idleAnchors.farFoot);
+check(
+  '通常立ちは膝を軽く緩めた直立姿勢になる',
+  idleNearKneeFlex >= 15 && idleNearKneeFlex <= 35
+    && idleFarKneeFlex >= 15 && idleFarKneeFlex <= 35,
+  `手前膝=${idleNearKneeFlex.toFixed(1)}度, 奥膝=${idleFarKneeFlex.toFixed(1)}度`,
+);
+check(
+  '通常立ちの体幹はほぼ垂直になる',
+  Math.abs(idlePose.torsoLean * 180 / Math.PI) <= 1,
+  `傾斜=${(idlePose.torsoLean * 180 / Math.PI).toFixed(1)}度`,
+);
+check(
+  '通常立ちの足裏位置を固定する',
+  near(idleAnchors.nearFoot.x, 103.2) && near(idleAnchors.nearFoot.y, 215.4)
+    && near(idleAnchors.farFoot.x, 96.8) && near(idleAnchors.farFoot.y, 215.4),
+);
 check(
   '通常立ち腕は肘で自然に曲がる',
-  Math.abs(idlePose.nearUpper - idlePose.nearLower) >= 0.35
-    && Math.abs(idlePose.farUpper - idlePose.farLower) >= 0.35,
+  Math.abs(idlePose.nearUpper - idlePose.nearLower) >= 0.22
+    && Math.abs(idlePose.farUpper - idlePose.farLower) >= 0.22,
   `上腕=${idlePose.nearUpper.toFixed(2)}, 前腕=${idlePose.nearLower.toFixed(2)}`,
+);
+check(
+  '通常立ちの両腕は肩から下へつながる',
+  idleAnchors.nearElbow.y - idleAnchors.nearShoulder.y >= 4
+    && idleAnchors.farElbow.y - idleAnchors.farShoulder.y >= 4,
+  `手前=${(idleAnchors.nearElbow.y-idleAnchors.nearShoulder.y).toFixed(1)}px, 奥=${(idleAnchors.farElbow.y-idleAnchors.farShoulder.y).toFixed(1)}px`,
+);
+check(
+  '通常立ちの両腕は胸前へ寄らず肩の下に収まる',
+  Math.abs(idleAnchors.muzzle.x - idleAnchors.nearShoulder.x) <= 1.2
+    && Math.abs(idleAnchors.farHand.x - idleAnchors.farShoulder.x) <= 1.2,
+  `バスター側=${(idleAnchors.muzzle.x-idleAnchors.nearShoulder.x).toFixed(1)}px, 反対腕=${(idleAnchors.farHand.x-idleAnchors.farShoulder.x).toFixed(1)}px`,
 );
 
 const standFirePose = motion.computePose({ ...base, vx: 0, fireHold: 18 });
