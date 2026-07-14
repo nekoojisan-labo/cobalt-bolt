@@ -956,6 +956,20 @@ function drawSkelArm(sx,sy,sh,el,UA,FA,col,hi,buster,fire,charge,uaP,faP){
 // 描画と弾の発射位置は getPlayerPoseAnchors() を共有し、別々の座標計算にしない。
 const PLAYER_RIG_LENGTHS={thigh:7.6,shin:9.3,upperArm:5.8,forearm:7.5,buster:7.25};
 const RUN_CYCLE_DISTANCE=64;
+const PLAYER_AIM_PROFILES={
+  stand:{
+    fire:{upper:0.92,lower:1.53,lean:-0.02,farUpper:-0.30,farLower:0.20},
+    charge:{upper:0.88,lower:1.46,lean:0.00,farUpper:-0.22,farLower:0.28},
+  },
+  run:{
+    fire:{upper:1.00,lower:1.54,lean:0.11,farUpper:-0.34,farLower:0.12},
+    charge:{upper:0.94,lower:1.48,lean:0.085,farUpper:-0.28,farLower:0.20},
+  },
+  jump:{
+    fire:{upper:1.05,lower:1.56,lean:0.04,farUpper:-0.52,farLower:0.10},
+    charge:{upper:1.00,lower:1.51,lean:0.025,farUpper:-0.42,farLower:0.16},
+  },
+};
 const PLAYER_POSE_KEYS=[
   'pelvisX','pelvisY','torsoLean',
   'nearFootX','nearFootY','farFootX','farFootY',
@@ -994,10 +1008,11 @@ function computePlayerPose(source){
   else if(moving) mode='run';
 
   const pose={
-    mode,armMode:'down',phase:0,
+    mode,armMode:'down',actionPose:'none',phase:0,
     pelvisX:0,pelvisY:-15.8,torsoLean:0.02,
     nearFootX:3.2,nearFootY:-0.6,farFootX:-3.2,farFootY:-0.6,
-    nearUpper:0.25,nearLower:0.10,farUpper:-0.12,farLower:0.12,
+    // 通常立ちも肩→肘→前腕の折れを見せ、棒状に垂らさない。
+    nearUpper:-0.18,nearLower:0.48,farUpper:0.18,farLower:-0.32,
   };
 
   if(mode==='run'){
@@ -1052,13 +1067,23 @@ function computePlayerPose(source){
 
   const charging=(p.charge||0)>=8, firing=(p.fireHold||0)>0;
   if(charging||firing){
-    const recoil=firing?Math.max(0,Math.min(1,((p.fireHold||0)-22)/8)):0;
-    pose.armMode=charging?'charge':'fire';
-    pose.nearUpper=1.18-recoil*0.08;
-    pose.nearLower=1.50-recoil*0.04;
-    pose.farUpper=-0.12;
-    pose.farLower=0.18;
-    pose.torsoLean=Math.min(pose.torsoLean,0.08)-recoil*0.055;
+    const action=charging?'charge':'fire';
+    const family=mode==='run'?'run'
+      : (mode==='takeoff'||mode==='ascent'||mode==='apex'||mode==='descent')?'jump'
+      : 'stand';
+    const recoil=(!charging&&firing)?Math.max(0,Math.min(1,((p.fireHold||0)-22)/8)):0;
+    const profile=PLAYER_AIM_PROFILES[family][action];
+    pose.armMode=action;
+    pose.actionPose=`${family}-${action}`;
+    pose.nearUpper=profile.upper-recoil*0.07;
+    pose.nearLower=profile.lower-recoil*0.03;
+    pose.farUpper=profile.farUpper;
+    pose.farLower=profile.farLower;
+    pose.torsoLean=profile.lean-recoil*0.045;
+    if(family==='stand'){
+      pose.nearFootX=4.4; pose.farFootX=-4.2;
+      pose.pelvisY=-15.3;
+    }
     pose.pelvisX-=recoil*0.45;
   }
   return pose;
@@ -1066,7 +1091,7 @@ function computePlayerPose(source){
 
 function blendPlayerPose(current,target){
   if(!current) return {...target};
-  const next={...current,mode:target.mode,armMode:target.armMode,phase:target.phase};
+  const next={...current,mode:target.mode,armMode:target.armMode,actionPose:target.actionPose,phase:target.phase};
   const bodyAlpha=target.mode==='landing'?0.48:0.34;
   for(const key of PLAYER_POSE_KEYS){
     let alpha=bodyAlpha;

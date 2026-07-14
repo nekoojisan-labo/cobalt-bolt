@@ -13,7 +13,11 @@ function _dev(x,y){return {x:t.a*x+t.c*y+t.e, y:t.b*x+t.d*y+t.f};}
 function _inv(X,Y){const det=t.a*t.d-t.b*t.c||1e-9,dx=X-t.e,dy=Y-t.f;return {x:(t.d*dx-t.c*dy)/det, y:(-t.b*dx+t.a*dy)/det};}
 function gradColor(s,u){if(!s.length)return{r:0,g:0,b:0,a:1};if(u<=s[0].o)return s[0].c;for(let i=1;i<s.length;i++){if(u<=s[i].o){const a=s[i-1],b=s[i],k=(u-a.o)/((b.o-a.o)||1);return{r:a.c.r+(b.c.r-a.c.r)*k,g:a.c.g+(b.c.g-a.c.g)*k,b:a.c.b+(b.c.b-a.c.b)*k,a:1};}}return s[s.length-1].c;}
 const ctx={imageSmoothingEnabled:false,fillStyle:'#000',strokeStyle:'#000',lineWidth:1,lineCap:'butt',globalAlpha:1,font:'',textAlign:'left',textBaseline:'alphabetic',
-  save(){stack.push({...t});},restore(){if(stack.length)t=stack.pop();},
+  save(){stack.push({t:{...t},fillStyle:this.fillStyle,strokeStyle:this.strokeStyle,lineWidth:this.lineWidth,
+    lineCap:this.lineCap,globalAlpha:this.globalAlpha,font:this.font,textAlign:this.textAlign,textBaseline:this.textBaseline});},
+  restore(){if(stack.length){const s=stack.pop();t=s.t;this.fillStyle=s.fillStyle;this.strokeStyle=s.strokeStyle;
+    this.lineWidth=s.lineWidth;this.lineCap=s.lineCap;this.globalAlpha=s.globalAlpha;this.font=s.font;
+    this.textAlign=s.textAlign;this.textBaseline=s.textBaseline;}},
   translate(dx,dy){t.e+=t.a*dx+t.c*dy;t.f+=t.b*dx+t.d*dy;},
   scale(ax,ay){t.a*=ax;t.b*=ax;t.c*=ay;t.d*=ay;},
   rotate(r){const co=Math.cos(r),si=Math.sin(r),a=t.a,b=t.b,c=t.c,d=t.d;t.a=a*co+c*si;t.b=b*co+d*si;t.c=-a*si+c*co;t.d=-b*si+d*co;},
@@ -50,6 +54,18 @@ console.log('player idle ready =', rd, ' run ready =', G.assets.player&&G.assets
 
 // device座標(=ワールド×RS)でプレイヤー周辺を切り出す
 const zoom=()=>{ const dx=Math.round((G.player.x-G.camX)*RS); return [Math.max(0,dx-160),600,360,360,3]; };
+const groundY=G.consts.GROUND_Y-G.consts.PH;
+function savePosePreview(name,overrides={}){
+  clear(); G.start(); G.enemies.length=0; G.releaseAll();
+  Object.assign(G.player,{
+    x:300,y:groundY,dir:1,onGround:true,vx:0,vy:0,anim:0,blink:40,
+    fireHold:0,charge:0,jumpAge:0,landT:0,wasGround:true,visualPose:null,
+  },overrides);
+  G.draw();
+  const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS);
+  const fy=Math.round((G.player.y+G.player.h)*RS);
+  save(path.join(__dirname,`preview_pose_${name}.png`),[Math.max(0,dx-100),Math.max(0,fy-200),210,220,4]);
+}
 // loading（起動時のローディング画面）
 clear(); G.state='loading'; G.draw(); save(path.join(__dirname,'preview_loading.png'));
 // idle（静止・敵あり全景）
@@ -116,7 +132,14 @@ for(const jp of jumpPoses){
   save(path.join(__dirname,'preview_jump_'+jp.name+'.png'),[Math.max(0,dx-90),Math.max(0,fy-190),190,210,4]);
 }
 // 骨格 走りチャージ(白■バグ確認=チャージ弾スプライトが出るはず)
-clear(); G.player.fireHold=0; G.player.charge=45; G.player.anim=2; G.draw();
+clear(); Object.assign(G.player,{y:groundY,onGround:true,vx:3.2,vy:0,jumpAge:0,landT:0,
+  fireHold:0,charge:45,anim:G.motion.runCycleDistance*0.25,visualPose:null}); G.draw();
 { const dx=Math.round((G.player.x-G.camX+G.player.w/2)*RS); save(path.join(__dirname,'preview_skelruncharge.png'),[Math.max(0,dx-90),690,210,200,4]); }
 G.player.charge=0;
-console.log('preview saved (1920x1080): play/idle/run/left/shoot/charge/boss/boss_charge/boss_fire/skelrun0-7');
+// 状態別の同倍率比較。肩接続・肘角度・胴との重なりを横並びで確認する。
+savePosePreview('idle');
+savePosePreview('stand_fire',{fireHold:18});
+savePosePreview('run_fire',{vx:3.2,anim:G.motion.runCycleDistance*0.25,fireHold:18});
+savePosePreview('jump_fire',{y:142,onGround:false,vx:3.2,vy:-4,jumpAge:8,fireHold:18});
+savePosePreview('run_charge',{vx:3.2,anim:G.motion.runCycleDistance*0.25,charge:45});
+console.log('preview saved (1920x1080): play/idle/run/left/shoot/charge/boss/skelrun0-7/pose states');

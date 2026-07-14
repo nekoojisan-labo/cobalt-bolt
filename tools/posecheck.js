@@ -69,6 +69,42 @@ check(
   `移動量=${(anchorsB.nearFoot.x - anchorsA.nearFoot.x).toFixed(2)}px`,
 );
 
+const idlePose = motion.computePose({ ...base, vx: 0 });
+check(
+  '通常立ち腕は肘で自然に曲がる',
+  Math.abs(idlePose.nearUpper - idlePose.nearLower) >= 0.35
+    && Math.abs(idlePose.farUpper - idlePose.farLower) >= 0.35,
+  `上腕=${idlePose.nearUpper.toFixed(2)}, 前腕=${idlePose.nearLower.toFixed(2)}`,
+);
+
+const standFirePose = motion.computePose({ ...base, vx: 0, fireHold: 18 });
+const runFirePose = motion.computePose({ ...base, vx: 3.2, anim: 16, fireHold: 18 });
+const jumpFirePose = motion.computePose({ ...base, onGround: false, vx: 3.2, vy: -4, jumpAge: 8, fireHold: 18 });
+const runChargeA = motion.computePose({ ...base, vx: 3.2, anim: 0, charge: 45 });
+const runChargeB = motion.computePose({ ...base, vx: 3.2, anim: 32, charge: 45 });
+const runChargeOverlap = motion.computePose({ ...base, vx: 3.2, anim: 16, fireHold: 30, charge: 45 });
+const actionSignatures = [standFirePose, runFirePose, jumpFirePose, runChargeA]
+  .map(p => `${p.nearUpper.toFixed(2)}:${p.nearLower.toFixed(2)}:${p.torsoLean.toFixed(2)}`);
+check('立ち・走り・ジャンプ・チャージが別々の構えを持つ', new Set(actionSignatures).size === 4, actionSignatures.join(' / '));
+check('立ち撃ちは専用の構えになる', standFirePose.actionPose === 'stand-fire', standFirePose.actionPose);
+check('走り撃ちは専用の構えになる', runFirePose.actionPose === 'run-fire', runFirePose.actionPose);
+check('ジャンプ撃ちは専用の構えになる', jumpFirePose.actionPose === 'jump-fire', jumpFirePose.actionPose);
+check('走りチャージは構えを維持する', runChargeA.actionPose === 'run-charge'
+  && near(runChargeA.nearUpper, runChargeB.nearUpper)
+  && near(runChargeA.nearLower, runChargeB.nearLower), runChargeA.actionPose);
+check('チャージ保持中は直前の発射保持が残っても反動を出さない', near(runChargeOverlap.pelvisX, 0)
+  && near(runChargeOverlap.nearUpper, runChargeA.nearUpper), `pelvisX=${runChargeOverlap.pelvisX.toFixed(2)}`);
+for (const [name, pose] of [
+  ['立ち撃ち', standFirePose],
+  ['走り撃ち', runFirePose],
+  ['ジャンプ撃ち', jumpFirePose],
+  ['走りチャージ', runChargeA],
+]) {
+  const a = motion.getAnchors(pose, 100, 216, 1);
+  check(`${name}: 肘を肩より下げて顔から腕が生えるのを防ぐ`, a.muzzle.y-a.nearShoulder.y>=2.8,
+    `肩→砲口の落差=${(a.muzzle.y-a.nearShoulder.y).toFixed(2)}px`);
+}
+
 for (const [name, pose] of [
   ['走行', runA],
   ['攻撃', motion.computePose({ ...base, fireHold: 30 })],
@@ -99,6 +135,31 @@ check('右向き砲口が肩より前にある', fireRight.muzzle.x > fireRight.
 check('左向き砲口が肩より前にある', fireLeft.muzzle.x < fireLeft.nearShoulder.x);
 check('左右反転でも砲口高が変わらない', near(fireRight.muzzle.y, fireLeft.muzzle.y));
 
+function startSettled() {
+  game.start();
+  game.releaseAll();
+  for (let i = 0; i < 8; i += 1) game.step();
+}
+
+startSettled();
+game.hold('x');
+game.step();
+check('実操作の立ち撃ちで専用構えになる', game.player.visualPose.actionPose === 'stand-fire', game.player.visualPose.actionPose);
+
+startSettled();
+game.hold('z');
+game.hold('x');
+game.step();
+check('実操作のジャンプ撃ちで専用構えになる', game.player.visualPose.actionPose === 'jump-fire', game.player.visualPose.actionPose);
+
+startSettled();
+game.hold('arrowright');
+game.hold('x');
+for (let i = 0; i < 45; i += 1) game.step();
+check('実操作の走りチャージで構えを維持する', game.player.vx > 0 && game.player.charge >= 40
+  && game.player.visualPose.actionPose === 'run-charge', game.player.visualPose.actionPose);
+
+game.releaseAll();
 game.start();
 for (let i = 0; i < 8; i += 1) game.step();
 game.player.x = 200;
