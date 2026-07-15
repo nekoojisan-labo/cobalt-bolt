@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COBALT BOLT — 全身マスター確認</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, "Hiragino Sans", sans-serif; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: #eefaff;
+      background: #070a1c url("../../assets/bg_far.png") center/cover fixed;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(4,7,24,.38), rgba(4,7,24,.86));
+      pointer-events: none;
+    }
+    main { position: relative; width: min(1180px, 94vw); margin: 0 auto; padding: 38px 0 48px; }
+    header { text-align: center; margin-bottom: 24px; }
+    h1 { margin: 0 0 8px; font-size: clamp(24px, 3vw, 40px); letter-spacing: .08em; }
+    header p { margin: 0; color: #a9c8e6; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+    .card {
+      border: 1px solid rgba(91,211,255,.44);
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(7,12,35,.84);
+      box-shadow: 0 18px 70px rgba(0,0,0,.42), inset 0 0 32px rgba(50,152,255,.06);
+    }
+    .card h2 { margin: 0; padding: 15px 18px; font-size: 17px; color: #bfefff; border-bottom: 1px solid rgba(91,211,255,.2); }
+    .stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      background: radial-gradient(circle at 50% 38%, rgba(38,99,170,.22), rgba(2,5,18,.7) 66%);
+    }
+    .stage::after {
+      content: "";
+      position: absolute;
+      left: 13%; right: 13%; bottom: 6.2%; height: 2px;
+      background: linear-gradient(90deg, transparent, #5ad1ff, transparent);
+      box-shadow: 0 0 13px #5ad1ff;
+    }
+    .character, .skeleton { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    .skeleton { filter: drop-shadow(0 0 4px rgba(255,210,63,.7)); }
+    .note { margin: 20px 0 0; padding: 18px 20px; border-radius: 14px; background: rgba(8,15,42,.9); border: 1px solid rgba(255,255,255,.1); }
+    .note strong { color: #5ad1ff; }
+    ul { margin: 10px 0 0; padding-left: 1.25em; color: #c9d9e9; line-height: 1.75; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } main { padding-top: 24px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>COBALT BOLT 全身マスター</h1>
+      <p>この一体造形を正本にしてから、同じ体を関節パーツへ分割します。</p>
+    </header>
+    <section class="grid">
+      <article class="card">
+        <h2>完成シルエット</h2>
+        <div class="stage">
+          <img class="character" src="character-master.png" alt="新しいCOBALT BOLTの直立全身マスター">
+        </div>
+      </article>
+      <article class="card">
+        <h2>関節構造の確認</h2>
+        <div class="stage">
+          <img class="character" src="character-master.png" alt="関節確認用の全身マスター">
+          <svg class="skeleton" viewBox="0 0 1024 1536" aria-label="予定する関節階層">
+            <g fill="none" stroke="#ffd23f" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".86">
+              <path d="M538 770 L604 498 L503 385 L462 281"/>
+              <path d="M604 498 L379 459 L334 634 L315 883"/>
+              <path d="M604 498 L628 481 L660 643 L690 826"/>
+              <path d="M538 770 L457 794 L381 973 L345 1280 L451 1362"/>
+              <path d="M538 770 L561 807 L577 974 L600 1285 L717 1345"/>
+            </g>
+            <g fill="#fff7c2" stroke="#ffd23f" stroke-width="7">
+              <circle cx="462" cy="281" r="14"/><circle cx="503" cy="385" r="14"/>
+              <circle cx="604" cy="498" r="14"/><circle cx="538" cy="770" r="16"/>
+              <circle cx="379" cy="459" r="14"/><circle cx="334" cy="634" r="14"/><circle cx="315" cy="883" r="14"/>
+              <circle cx="628" cy="481" r="14"/><circle cx="660" cy="643" r="14"/><circle cx="690" cy="826" r="14"/>
+              <circle cx="457" cy="794" r="14"/><circle cx="381" cy="973" r="14"/><circle cx="345" cy="1280" r="14"/><circle cx="451" cy="1362" r="14"/>
+              <circle cx="561" cy="807" r="14"/><circle cx="577" cy="974" r="14"/><circle cx="600" cy="1285" r="14"/><circle cx="717" cy="1345" r="14"/>
+            </g>
+          </svg>
+        </div>
+      </article>
+    </section>
+    <section class="note">
+      <strong>この段階で確認すること</strong>
+      <ul>
+        <li>頭・胸・骨盤・脚が、一人の体として自然につながって見える</li>
+        <li>右腕バスターと左手が、肩から無理なく生えている</li>
+        <li>手前側と奥側の腕脚が区別でき、両足が同じ地面へ接地している</li>
+        <li>走り・ジャンプ・攻撃へ動かしても壊れない関節位置になっている</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
