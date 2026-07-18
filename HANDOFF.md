@@ -1,5 +1,23 @@
 # HANDOFF — Claude ↔ Codex 協働ログ（新しい順に上へ追記）
 
+## 2026-07-18 — [claude] run-lean: 「直立のまま走る」を体幹前傾＋頭部追従で解消（ローカル反映・デプロイ待ち）
+- ユーザー評価（公開版 2026071702 への実操作フィードバック）: 「キャラのポーズが直立状態で、そのまま走る動作をするから不自然」。
+- R1/R2: 描画側は正常（実機で `source=player3d` / run 20コマの距離同期を確認）。原因は素材のポーズ設計で、(a) 体幹前傾が spine 11.5°のみ (b) `DEF_head z=-torso_lean` の完全逆補正で背の高いヘルメットシルエットが常に垂直 (c) 腕振り振幅が小さい、の3点により実寸で「その場足踏み」に読めた。
+- R4: 変更前の `render_motion_previews.py`・8素材・砲口anchorsを `blender/hero/archive/20260718-pre-forward-lean/` に固定（変更前HEAD=458c808）。
+- R5（`blender/hero/render_motion_previews.py` の run 上半身のみ変更・下半身周期/骨長/カメラ/砲口計算/当たり判定は不変）:
+  - 体幹前傾 `11.5+1.0sin` → `13.5+1.0sin`（度）。腹部↔骨盤シェルの新規衝突ゼロで通る物理上限がピーク約14.5°であることを二分探索で確認して採用。
+  - 頭部の逆補正を `-torso_lean` → `-0.45*torso_lean` に変更＝ヘルメットが前傾に約55%追従。直立読みの主因を解消。
+  - 腕振り振幅を拡大: buster側 `5+28cos→6+36cos`、自由腕 `-8-42cos→-10-50cos`、前腕も同調。
+  - `audit_motion_cycles.py` の `run_torso_drive` 許容帯を [8,13] → [8,15] に更新（旧上限が直立読みの一因。物理衝突ゼロ上限14.5°の直上に設定。run_shoot/run_charge の照準系 AIM_LIMITS は不変）。
+  - `index.html` は `ASSET_VER='2026071801'` のみ変更。
+- 検証:
+  - `audit_motion_cycles.py` = 124 frames / new-or-worsened collisions 0 / invariant failures 0。
+  - `validate_game_sprites.py` = 8 motions / 124 frames OK、`validate_motion_readability.py` = failures 0。
+  - `node tools/player3dcheck.js` = 43/43、`node tools/posecheck.js` = 48/48、`node harness.js` = 30/30。
+  - ローカル実機（127.0.0.1:8766・production Canvas実寸crop）で接地1/11・空中8/16コマとも前傾走行として読めることを目視確認。console error 0。
+- 公開: **未デプロイ**（ユーザー承認後に push → `?v=2026071801` で確認）。ロールバックは archive か `git checkout 458c808 -- assets index.html`。
+- 次: ユーザーが実操作で走りの自然さを評価。不足なら (a) さらに前傾を出す場合は骨盤ごと傾ける方式の検討（下半身共有制約と AIM_LIMITS の再設計が必要） (b) 接地フレームの膝高調整。
+
 ## 2026-07-17 — [codex] large-run/visibility: 大振り走行と明色スプライトをローカル反映
 - 実施:
   - 20コマ走行を角度の一律拡大ではなく、着地→荷重→骨盤通過→蹴り出し→両足離地→膝先行の回収として再作成。左右半周期とも連続した空中局面を持ち、通常走りの両腕は肩から大きく逆位相で振る。
