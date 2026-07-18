@@ -1,5 +1,17 @@
 # HANDOFF — Claude ↔ Codex 協働ログ（新しい順に上へ追記）
 
+## 2026-07-18 — [claude] combat-idle: 待機を「気をつけ」から戦闘構えへ（ローカル反映・デプロイ待ち）
+- ユーザー指示: 「通常の立ち姿もまっすぐ立ってるんじゃなくて、戦うために構えてるポーズにする」＋「レンダリング済みモデルが使われているか」の確認。
+- 使用状況の回答: 8モーション全て（idle/shoot/charge/run/runshoot/runcharge/jump/jumpshoot）が `player3d_*.png`（Blenderレンダー）を本番経路で使用中（`resolvePlayer3DVisual`→`source=player3d` を実機確認）。例外は被弾のみ＝3D未制作でidle点滅表示（旧 `player_hurt.png` はフォールバック専用）。
+- 新idle（`apply_idle_frame`）: 広いスタッガー（R -0.28 / L +0.34）＋浅い沈み（pelvis -0.058±0.004）＋体幹前傾10.5°＋頭部追従。腕は**バスター半構え**（肩-45/肘10＝照準ラインへワンスナップ・砲口が前方に見える）＋**自由腕は走りの後方スイングと同じ後方コイル**（肩+35/肘70）。呼吸で骨盤・腕が微動。
+- **模型の可動限界を計測で発見（重要・再利用知見）**: 両脚IKの垂直しゃがみは **drop 0.07 で KneeCap↔ThighFrontPlate が新規衝突**（FKなら膝50°曲げてもクリーン＝IKソルバが大腿に入れるロール成分が原因）。深いしゃがみ待機はモデル改修なしでは不可 → 構えの読みはスタッガー幅・前傾・ガード腕で担保する設計にした。プローブ手順は session scratchpad の sweep スクリプト（tune_idle_crouch / probe_knee / probe_final）方式で再現可能。
+- `JUMP_KEYS` 接地キーを新スタンスへ追随: launch feet (-0.16,0.20)・impact (-0.12,0.16)・**settle = idle f0 と完全一致**（audit の jump_idle_endpoint ゲート、実測 delta 0 で通過）。
+- `ASSET_VER='2026071803'`。`PLAYER3D_MUZZLE` を新 anchors から再生成（idle砲口が半構え位置 [179,145] へ移動）。再レンダーで画素が変わらなかった run系/charge/shoot ストリップは HEAD へ戻しコミットを実変更のみに限定。
+- 検証: audit 124frames/新規・悪化衝突0/不変条件0、validate_game_sprites 8/124 OK、validate_motion_readability 0、player3dcheck 43/43、posecheck 48/48、harness 30/30。実機Chrome（`?v=2026071803`）で idle=戦闘構え表示・`source=player3d`・console error 0。
+- 退避: `blender/hero/archive/20260718-pre-combat-idle/`（変更前HEAD=7e5b194）。
+- 公開: **未デプロイ**（走り改修と合わせてユーザー承認後に push）。
+- 次: ユーザー実操作評価。任意の追随候補=(a) stand_shoot/charge の足幅（brace 0.12/0.16）を新idleの広さへ寄せて遷移の足移動を減らす (b) 3D hurt モーション制作（現状はidle点滅代用）。
+
 ## 2026-07-18 — [claude] run-athletic: 骨盤込み9°前傾＋両腕ポンプで「直立走り」を全面解消（ローカル反映・デプロイ待ち）
 - ユーザー再指摘（run-lean 2026071801 でも不足）: 「ポーズが直立のまま走って不自然。両手をしっかり振る・前傾する・レンダリング用に決めたパーツが活かされていない」。
 - 診断: (a) 骨盤が並進のみで無回転＝体幹基部と骨盤シェルが常に垂直 (b) `DEF_head` -45%逆補正でヘルメット（シルエットの1/3）がほぼ垂直 (c) 前振り側の肘が伸展（バスター肘14°）＝拳が腰より上がらず「垂れ腕」読み。spine単独増量は腹部↔骨盤衝突の物理上限14.5°で不可能＝構造変更が必須だった。
