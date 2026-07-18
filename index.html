@@ -167,9 +167,21 @@ function manageBgm(){            // 毎フレーム呼ぶ（状態に応じてBG
 // 各エンティティ＝{fw,fh,scale,ax,ay, anims:{name:{src,frames,fps}}}。
 // anim毎に1枚の横ストリップPNG（コマを横一列）。素材配置後にここを記述する。
 // ★キャッシュ無効化: 素材PNGを差し替えたら ASSET_VER を変えると、ブラウザ/CDNが必ず新素材を取得する。
-const ASSET_VER = '2026060203';
+const ASSET_VER = '2026071702';
 function _av(s){ return s + (s.indexOf('?')<0 ? '?v=' : '&v=') + ASSET_VER; }
 const ASSETS = {
+  // 現在のBlender全身リグを、ローカル実機テスト用にそのまま書き出した3Dレンダー。
+  // 旧2D素材は player として残し、?hero=legacy でいつでも旧描画へ戻せる。
+  player3d:{ fw:256, fh:256, scale:0.16, ax:0.5, ay:0.955, anims:{
+    idle     :{src:'assets/player3d_idle.png',      frames:24, fps:12},
+    shoot    :{src:'assets/player3d_shoot.png',     frames:8,  fps:14},
+    charge   :{src:'assets/player3d_charge.png',    frames:12, fps:12},
+    run      :{src:'assets/player3d_run.png',       frames:20, fps:60},
+    runshoot :{src:'assets/player3d_runshoot.png',  frames:20, fps:60},
+    runcharge:{src:'assets/player3d_runcharge.png', frames:20, fps:60},
+    jump     :{src:'assets/player3d_jump.png',      frames:10, fps:15},
+    jumpshoot:{src:'assets/player3d_jumpshoot.png', frames:10, fps:15},
+  }},
   // 高精細2D(塗り)。scale/ayは見た目に合わせて調整。未生成のanimはidleへ自動フォールバック。
   player:{ fw:256, fh:256, scale:0.16, ax:0.5, ay:0.98, anims:{
     idle  :{src:'assets/player_idle.png',  frames:5, fps:6},
@@ -217,9 +229,13 @@ function loadAssets(){
   loadSkel();  // 骨格用 塗りパーツ
 }
 // 足元(底辺中央)のスクリーン座標 footX/footY に、anim の現在コマを描く。dir<0で反転。
-function drawSheet(key, anim, time, footX, footY, dir, frame){
+function drawSheet(key, anim, time, footX, footY, dir, frame, strict=false){
   const a=ASSETS[key]; if(!a || !ctx) return false;
-  let an=a.anims[anim]; if(!an || !an.ready) an=a.anims.idle;   // 無ければidleで代用
+  let an=a.anims[anim];
+  if(!an || !an.ready){
+    if(strict) return false;                                    // 3D状態欠損時は旧全身描画へ戻す
+    an=a.anims.idle;                                             // 汎用素材はidleで代用
+  }
   if(!an || !an.ready || !an.img) return false;
   const fw=a.fw, fh=a.fh, sc=a.scale||1, w=fw*sc, h=fh*sc, n=an.frames||1;
   const f=(frame!=null ? (((frame%n)+n)%n) : (an.fps ? Math.floor(time*an.fps/60)%n : 0));  // frame指定時は固定(ジャンプの揺れ防止)
@@ -956,6 +972,70 @@ function drawSkelArm(sx,sy,sh,el,UA,FA,col,hi,buster,fire,charge,uaP,faP){
 // 描画と弾の発射位置は getPlayerPoseAnchors() を共有し、別々の座標計算にしない。
 const PLAYER_RIG_LENGTHS={thigh:7.6,shin:9.3,upperArm:5.8,forearm:7.5,buster:7.25};
 const RUN_CYCLE_DISTANCE=64;
+const HERO3D_ENABLED=!(typeof globalThis!=='undefined' && globalThis.location &&
+  /(?:^|[?&])hero=legacy(?:&|$)/.test(globalThis.location.search||''));
+// export_game_sprites.py が同じレンダーから生成する砲口座標。実データは素材検査後に埋め込む。
+const PLAYER3D_MUZZLE={"idle":[[136.1074,157.7219],[136.04,157.6992],[135.9771,157.678],[135.9231,157.6596],[135.8816,157.6455],[135.8556,157.6367],[135.8467,157.6336],[135.8556,157.6367],[135.8816,157.6455],[135.9231,157.6596],[135.9771,157.678],[136.04,157.6992],[136.1074,157.7219],[136.1749,157.7445],[136.2377,157.7654],[136.2915,157.7834],[136.3329,157.7971],[136.3589,157.8057],[136.3678,157.8086],[136.3589,157.8057],[136.3329,157.7971],[136.2915,157.7834],[136.2377,157.7654],[136.1749,157.7445]],"shoot":[[200.9185,94.4645],[196.4451,99.1412],[198.536,96.9883],[200.0745,95.3919],[200.9185,94.4645],[200.9185,94.4645],[200.9185,94.4645],[200.9185,94.4645]],"charge":[[200.9762,100.7273],[201.0196,100.9625],[201.051,101.1348],[201.0624,101.1979],[201.051,101.1348],[201.0196,100.9625],[200.9762,100.7273],[200.932,100.4922],[200.8993,100.3202],[200.8872,100.2573],[200.8993,100.3202],[200.932,100.4922]],"run":[[71.9917,119.7513],[66.9794,121.6273],[67.5496,127.5519],[78.8798,129.7084],[88.7543,137.0953],[101.4448,142.4232],[115.4712,145.0884],[128.7279,149.1875],[139.2704,152.4887],[145.8351,154.5101],[152.5608,158.0286],[143.6591,159.0517],[133.5737,160.3364],[127.7601,154.0153],[114.9217,149.9183],[101.4448,142.4232],[89.0462,132.8047],[79.0679,126.5158],[72.182,121.9133],[68.3817,118.6667]],"runshoot":[[216.4318,97.976],[210.417,98.5305],[207.4324,99.3171],[212.1375,93.5061],[211.9765,91.9028],[211.7157,89.3379],[211.4547,86.7744],[211.2932,88.6284],[211.2932,91.7695],[211.4547,94.3131],[216.4224,97.9759],[210.395,98.5305],[207.4198,99.3171],[212.1375,93.5061],[211.9765,91.9028],[211.7157,89.3379],[211.4547,86.7744],[211.2932,88.6284],[211.2932,91.7695],[211.4547,94.3131]],"runcharge":[[215.7046,100.6555],[209.6898,101.21],[206.7053,101.9967],[211.4104,96.1856],[211.2493,94.5823],[210.9885,92.0174],[210.7273,89.4539],[210.5658,91.3079],[210.5658,94.449],[210.7273,96.9926],[215.6952,100.6554],[209.6678,101.21],[206.6927,101.9967],[211.4104,96.1856],[211.2493,94.5823],[210.9885,92.0174],[210.7273,89.4539],[210.5658,91.3079],[210.5658,94.449],[210.7273,96.9926]],"jump":[[85.5049,144.0227],[102.0391,149.1371],[124.8352,154.7089],[141.9381,154.9372],[135.3369,155.3253],[125.3617,155.592],[114.8804,154.8533],[103.0518,152.4178],[108.6454,154.5063],[116.413,156.4326]],"jumpshoot":[[204.2118,97.0609],[205.1541,95.3334],[205.1541,95.3334],[205.1541,95.3334],[205.1541,95.3334],[205.1541,95.3334],[205.1541,95.3334],[205.1541,95.3334],[205.7823,96.9039],[205.1541,96.5898]]};
+let playerRenderInfo={source:'none',anim:null,frame:null,chargeOverlay:false};
+
+function player3DRunFrame(distance){
+  const frameDistance=RUN_CYCLE_DISTANCE/20;
+  return Math.floor(_poseMod(distance||0,RUN_CYCLE_DISTANCE)/frameDistance+1e-7)%20;
+}
+
+function player3DJumpFrame(p){
+  if(p.onGround) return (p.landT||0)>=4 ? 8 : 9;
+  const age=p.jumpAge||0, vy=p.vy||0;
+  if(age<=1) return 0;       // 蹴り出し接地
+  if(vy<-6.8) return 1;      // 伸展
+  if(vy<-4.2) return 2;      // 上昇開始
+  if(vy<-1.5) return 3;      // 高速上昇
+  if(vy<0) return 4;         // 頂点へ
+  if(vy<1.5) return 5;       // 頂点
+  if(vy<4.0) return 6;       // 下降
+  return 7;                  // 着地へ足を伸ばす
+}
+
+// 物理状態から描画状態を一度だけ決め、描画・砲口・検査で共有する。
+function resolvePlayer3DVisual(p){
+  const charging=(p.charge||0)>=8;
+  const firing=(p.fireHold||0)>0;
+  const moving=Math.abs(p.vx||0)>0.1;
+  const jumpSequence=!p.onGround || (p.landT||0)>0;
+  let anim,frame;
+  if(jumpSequence){
+    anim=(charging||firing)?'jumpshoot':'jump';
+    frame=player3DJumpFrame(p);
+  }else if(moving){
+    anim=charging?'runcharge':firing?'runshoot':'run';
+    frame=player3DRunFrame(p.anim||0);                       // 20コマ=64pxを全派生で共有
+  }else if(charging){
+    anim='charge'; frame=Math.floor((p.blink||0)*12/60)%12;
+  }else if(firing){
+    anim='shoot';
+    const age=Math.max(0,30-(p.fireHold||0));
+    frame=Math.min(7,Math.floor(age*14/60));                 // 発砲時計。歩行位相とは独立
+  }else{
+    anim='idle'; frame=Math.floor((p.blink||0)*12/60)%24;
+  }
+  return {anim,frame,charging,firing,moving,jumpSequence,chargeOverlay:charging};
+}
+
+function player3DAnimReady(visual){
+  const anim=visual && ASSETS.player3d && ASSETS.player3d.anims[visual.anim];
+  return !!(HERO3D_ENABLED && anim && anim.ready && anim.img);
+}
+
+function getPlayer3DMuzzleWorld(visual,p=player){
+  const frames=visual && PLAYER3D_MUZZLE[visual.anim];
+  const source=frames && frames[visual.frame%frames.length];
+  if(!source) return null;
+  const asset=ASSETS.player3d;
+  const footX=p.x+p.w/2, footY=p.y+p.h;
+  let dx=(source[0]-asset.fw*asset.ax)*asset.scale;
+  if(p.dir<0) dx=-dx;
+  return {x:footX+dx,y:footY+(source[1]-asset.fh*asset.ay)*asset.scale};
+}
 const PLAYER_AIM_PROFILES={
   stand:{
     fire:{upper:0.92,lower:1.53,lean:-0.02,farUpper:-0.30,farLower:0.20},
@@ -1156,9 +1236,27 @@ function getPlayerPoseAnchors(pose,footX,footY,dir=1){
 }
 
 function getPlayerMuzzleWorld(){
+  const visual=resolvePlayer3DVisual(player);
+  if(player3DAnimReady(visual)){
+    const renderedMuzzle=getPlayer3DMuzzleWorld(visual,player);
+    if(renderedMuzzle) return renderedMuzzle;
+  }
   const pose=player.visualPose||computePlayerPose(player);
   const footX=player.x+player.w/2, footY=player.y+player.h;
   return getPlayerPoseAnchors(pose,footX,footY,player.dir).muzzle;
+}
+
+function drawPlayer3DChargeOverlay(visual){
+  if(!visual.chargeOverlay) return;
+  const muzzle=getPlayer3DMuzzleWorld(visual,player);
+  const charge=getImg(BULLET_SPR.charge.src);
+  if(!muzzle || !charge || !charge.ready || !charge.img) return;
+  const count=BULLET_SPR.charge.frames||1;
+  const frame=Math.floor(player.blink*(BULLET_SPR.charge.fps||1)/60)%count;
+  const fw=charge.img.width/count;
+  const size=player.charge>=40?7.5:4.5+(player.charge/40)*3;
+  ctx.drawImage(charge.img,frame*fw,0,fw,charge.img.height,
+    muzzle.x-camX-size/2,muzzle.y-size/2,size,size);
 }
 
 function _segmentBetween(a,b,w,col,hi,part){
@@ -1273,8 +1371,10 @@ function drawPlayerSkelFallback(footX, footY, dir){
 }
 
 function drawPlayer(){
-  if(player.inv>0 && Math.floor(player.blink/3)%2===0 && !player.dead) return;
-  if(player.dead){ return; }
+  if(player.inv>0 && Math.floor(player.blink/3)%2===0 && !player.dead){
+    playerRenderInfo={source:'hidden',anim:null,frame:null,chargeOverlay:false}; return;
+  }
+  if(player.dead){ playerRenderInfo={source:'dead',anim:null,frame:null,chargeOverlay:false}; return; }
   // 状態を脚と腕で独立に決める＝走り撃ち時は脚run+腕fireで“腕だけ伸ばしっぱなし”
   const onG=player.onGround, mvg=Math.abs(player.vx)>0.1, firing=player.fireHold>0;   // 発射保持中は腕を伸ばしたまま
   const legState = !onG ? 'jump' : mvg ? 'run' : (player.inv>56?'hurt':'idle');
@@ -1282,8 +1382,19 @@ function drawPlayer(){
   const legFrame = legState==='run' ? Math.floor(player.anim) : 0;
   const armFrame = armState==='charge' ? Math.floor(player.blink/4) : 0;
   const footX = player.x-camX+player.w/2, footY = player.y+player.h;
-  // 通常経路は全身関節リグ。既存フルフレームはパーツ欠損時だけの安全なフォールバック。
+  // テスト中の通常経路はBlender全身レンダー。状態素材が1枚でも欠けた場合だけ旧全身リグへ戻す。
+  const visual=resolvePlayer3DVisual(player);
+  if(player3DAnimReady(visual) &&
+     drawSheet('player3d',visual.anim,player.blink,footX,footY,player.dir,visual.frame,true)){
+    const muzzle=getPlayer3DMuzzleWorld(visual,player);
+    playerRenderInfo={source:'player3d',anim:visual.anim,frame:visual.frame,
+      chargeOverlay:visual.chargeOverlay,muzzle};
+    drawPlayer3DChargeOverlay(visual);
+    return;
+  }
+  // 旧全身関節リグは素材欠損時と ?hero=legacy の安全なフォールバック。
   if(skelReady()){
+    playerRenderInfo={source:'articulated',anim:visual.anim,frame:visual.frame,chargeOverlay:false};
     drawPlayerArticulated(footX,footY,player.dir);
     return;
   }
@@ -1296,7 +1407,10 @@ function drawPlayer(){
     : 'idle';
   // ジャンプは上下速度でフレーム固定、立ち撃ちは構えポーズ固定(マズルは発射FXに任せる)
   const _fr = (legState==='jump') ? (player.vy<0?0:1) : ((_anim==='shoot') ? 0 : null);
-  if(drawSheet('player', _anim, player.blink, footX, footY, player.dir, _fr)) return;
+  if(drawSheet('player', _anim, player.blink, footX, footY, player.dir, _fr)){
+    playerRenderInfo={source:'legacy-sheet',anim:_anim,frame:_fr,chargeOverlay:false}; return;
+  }
+  playerRenderInfo={source:'code-fallback',anim:_anim,frame:_fr,chargeOverlay:false};
   drawPlayerSkelFallback(footX, footY, player.dir);   // 全画像が欠損した場合のみコード描画
   return;
   // ===== 以下は旧コード描画リグ(未使用) =====
@@ -1542,6 +1656,7 @@ if(typeof globalThis!=='undefined'){
   globalThis.__GAME={
     get state(){return state}, get player(){return player}, get enemies(){return enemies},
     get boss(){return boss}, get bossActive(){return bossActive},
+    get playerRenderInfo(){return playerRenderInfo}, get hero3dEnabled(){return HERO3D_ENABLED},
     get pBullets(){return pBullets}, get eBullets(){return eBullets},
     get camX(){return camX}, get solids(){return solids}, get items(){return items}, get hazards(){return hazards}, get spawns(){return spawns},
     consts:{W,H,GROUND_Y,LEVEL_W,ROOM_X,BOSS_TRIGGER,PW,PH},
@@ -1552,6 +1667,11 @@ if(typeof globalThis!=='undefined'){
       computePose:computePlayerPose,
       getAnchors:getPlayerPoseAnchors,
       getPlayerMuzzle:getPlayerMuzzleWorld,
+      getPlayer3DMuzzle:getPlayer3DMuzzleWorld,
+      resolve3D:resolvePlayer3DVisual,
+      run3DFrame:player3DRunFrame,
+      jump3DFrame:player3DJumpFrame,
+      player3DMuzzle:PLAYER3D_MUZZLE,
       solveTwoBone,
       lengths:PLAYER_RIG_LENGTHS,
       runCycleDistance:RUN_CYCLE_DISTANCE,
