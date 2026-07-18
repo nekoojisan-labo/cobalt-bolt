@@ -1,5 +1,48 @@
 # HANDOFF — Claude ↔ Codex 協働ログ（新しい順に上へ追記）
 
+## 2026-07-17 — [codex] large-run/visibility: 大振り走行と明色スプライトをローカル反映
+- 実施:
+  - 20コマ走行を角度の一律拡大ではなく、着地→荷重→骨盤通過→蹴り出し→両足離地→膝先行の回収として再作成。左右半周期とも連続した空中局面を持ち、通常走りの両腕は肩から大きく逆位相で振る。
+  - `runshoot` / `runcharge` はバスターの照準を維持しつつ、`run` と同じ骨盤・脚・足首周期を共有。承認済み造形、骨長、カメラ、足元、砲口、ゲーム物理、当たり判定は不変。
+  - ゲーム書き出しだけ青装甲・濃紺・関節・銀・シアンを明るくし、補助光と露出を調整。同じ主人公blendから8状態124コマを再レンダーし、`assets/player3d_*.png` と砲口アンカーを更新。`ASSET_VER=2026071702`。
+  - 変更前162ファイル・16MBを `blender/hero/archive/20260717-pre-large-run-brightness/` に固定。`?hero=legacy` の旧描画復帰は維持。
+- 検証:
+  - `blender/hero/audit_motion_cycles.py` = 124 frames / invariant failures 0 / new-or-worsened collisions 0。
+  - `python3 blender/hero/validate_motion_readability.py` = failures 0。腿可動域70度以上、両足離地、関節移動、実寸シルエット差を確認。
+  - 線形輝度中央値は `run 0.0278→0.1101`、`runshoot 0.0235→0.1045`、`runcharge 0.0234→0.1037`。通常走り暗部率は `67.3%→19.7%`。
+  - `python3 blender/hero/validate_game_sprites.py` = 8 motions / 124 frames、`node tools/player3dcheck.js` = 43/43、`node tools/posecheck.js` = 48/48、`node harness.js` = 30/30。
+  - Chromeのproduction Canvasで `run/runshoot/runcharge/jump` を状態assert付きで取得し、全状態 `source=player3d`、素材404 0、console error 0。証跡は `blender/hero/diagnostics/large_run_game/`。
+- ローカル試遊:
+  - `http://127.0.0.1:8766/index.html`。既存の8765は別プロトタイプと競合するため使わない。
+  - 走りの自然さは完成承認にせず、ユーザーの実操作評価待ち。
+- 公開（2026-07-18）:
+  - 旧公開 `main=b4f028f` を復旧タグ `pre-3d-run-deploy-20260718` としてGitHubへ保存し、公開コミット `9f633e1` へfast-forward。
+  - GitHub Pagesのindexは88468 bytes・SHA-256 `34db82cbb8e21557803e44f0ab1a1c2f651101fa05d8d1e0a1422af0f0562dac` でローカルと完全一致。8本の3D素材も8/8完全一致。
+  - `https://nekoojisan-labo.github.io/cobalt-bolt/?v=2026071702` をChromeで開き、タイトル表示、ゲーム開始、1920×1080 Canvas、console error/warning 0を確認。
+
+---
+
+## 2026-07-17 — [codex] current 3D motion: ローカルゲームへテスト反映
+- 実施:
+  - 現行20コマ走行は視覚的不採用のまま、ユーザー操作で実寸を判断するためだけにゲームへ一時反映。完成・採用扱いにはしていない。
+  - 同じ主人公blendから `idle/shoot/charge/run/runshoot/runcharge/jump/jumpshoot` を256×256 RGBA、計124コマで固定カメラ再レンダー。床線、背景、焼き込み発光、ジャンプ軌道は含めない。
+  - `assets/player3d_*.png` と `assets/player3d_anchors.json` を新規追加し、既存 `player_*.png` は上書きしていない。
+  - `drawPlayer()` の入口で3Dの該当状態だけを厳密選択し、素材欠損時は旧全身関節リグへ戻す。URLへ `?hero=legacy` を付けると常時旧描画へ戻る。
+  - 走り／走り撃ち／走りチャージは同じ20コマを64ワールドpxへ距離同期。レビュー動画だけの周期固定反動は制作スプライトから除外し、発砲時計と走行時計を分離。
+  - Blenderカメラから各コマの砲口を投影し、描画・弾origin・マズルFX・外付けチャージ球が同じ状態／コマ／座標を参照。
+- 検証:
+  - `python3 blender/hero/validate_game_sprites.py` = 8 motions / 124 frames。RGBA、寸法、透明四隅、2px安全余白、元コマとstripの完全一致を確認。
+  - `node tools/player3dcheck.js` = 43 passed。9状態、20コマ=64px、走り3種の脚位相、ジャンプ10段階、実PNG経路、左右砲口、欠損fallback、実弾originを確認。
+  - `node harness.js` = 30/30、`node tools/posecheck.js` = 48/48、`node tools/preview.js` rendered。
+  - ローカル実ブラウザで8本の `player3d_*.png` がHTTP 200、立ち撃ちと弾の砲口一致、console error/warning 0を確認。
+- 退避/公開:
+  - 変更前ゲームを `blender/hero/archive/20260717-pre-game-integration/` に保持。不採用モーションv1/v2のarchiveも不変。
+  - GitHub Pagesへのpush/deployは未実施。
+- 次:
+  - ユーザーがローカルゲームで通常走り、走り撃ち、走り長押しチャージ、ジャンプ撃ちを操作評価する。走行の視覚的不採用を解消する作業は、そのフィードバックを受けて別途継続する。
+
+---
+
 ## 2026-07-15 — [codex] char: 通常立ちの前傾・沈み込みを解消
 - 実施:
   - 通常立ちの骨盤を上げ、左右の膝曲げを約55度から約27度／25度へ軽減。足裏の接地点は維持。
