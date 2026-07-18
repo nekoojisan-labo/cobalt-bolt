@@ -1,6 +1,22 @@
 # HANDOFF — Claude ↔ Codex 協働ログ（新しい順に上へ追記）
 
-## 2026-07-18 — [claude] run-lean: 「直立のまま走る」を体幹前傾＋頭部追従で解消（ローカル反映・デプロイ待ち）
+## 2026-07-18 — [claude] run-athletic: 骨盤込み9°前傾＋両腕ポンプで「直立走り」を全面解消（ローカル反映・デプロイ待ち）
+- ユーザー再指摘（run-lean 2026071801 でも不足）: 「ポーズが直立のまま走って不自然。両手をしっかり振る・前傾する・レンダリング用に決めたパーツが活かされていない」。
+- 診断: (a) 骨盤が並進のみで無回転＝体幹基部と骨盤シェルが常に垂直 (b) `DEF_head` -45%逆補正でヘルメット（シルエットの1/3）がほぼ垂直 (c) 前振り側の肘が伸展（バスター肘14°）＝拳が腰より上がらず「垂れ腕」読み。spine単独増量は腹部↔骨盤衝突の物理上限14.5°で不可能＝構造変更が必須だった。
+- 退避: 変更前scripts＋2026071801素材一式を `blender/hero/archive/20260718-pre-athletic-lean/`（変更前HEAD=2e69c47）に固定。
+- 実装（`render_motion_previews.py` / `render_pose_previews.py` / `audit_motion_cycles.py` / `index.html`）:
+  - `RUN_PELVIS_LEAN=9`: DEF_pelvisを回転（armature-spaceオフセット後にrotation_euler設定で両立）。脚FKは authored−9° の逆補正で世界座標の脚軌道・接地・クリアランスを完全保持 → run/runshoot/runcharge の共有下半身不変条件はそのまま成立。
+  - 頭部逆補正 -0.45→-0.18 → 頭部世界前傾 約38°・体幹実測 21.5〜23.5°（ヘルメットが走りへ倒れ込み、クレストが後方へ流れる）。
+  - 両腕ポンプ（sweep実測で決定）: `upper_arm.R z=42*stride / forearm.R z=62-5*stride / upper_arm.L z=-7-63*stride / forearm.L z=85-7*stride`。前振りは肘深屈で拳が胸前（hand_dx+0.32BU・肘内角103°、audit床0.25を実測クリア）、後振りは肋横タック。両局面とも肘屈曲維持＝棒腕読みを排除。
+  - `upper_aim` に `extra_lean` 追加: 骨盤前傾分も肩カウンターに合算＋`forearm.R x=-6.4-0.09*extra_lean` のヨートリム → runshoot muzzle elev -1.31° / yaw 1.35° で AIM_LIMITS(±2°)内。stand/jump系は extra_lean=0 で完全不変。
+  - 腿ドライブピーク 45→40(f4/f14)・38(f5/f15): 前傾で股関節が9°閉じ `PelvisFrontPlate↔ThighPrimaryShell` が新規衝突（14tri）したため。lead-knee≥38°ゲートは40で維持。
+  - audit `run_torso_drive` 帯 [8,15]→[17,27]: 下限が前傾を強制＝直立への回帰を以後failさせる。
+  - `ASSET_VER='2026071802'`。**`PLAYER3D_MUZZLE` インラインテーブルを新 `assets/player3d_anchors.json` から機械再生成**（腕ポーズ変更でrun系砲口座標が大幅移動・旧テーブルは失効。素材再レンダー時はこのテーブル再生成を忘れないこと）。
+- 検証: `audit_motion_cycles` 124frames/新規・悪化衝突0/不変条件0、`validate_game_sprites` 8motions/124frames OK、`validate_motion_readability` failures 0、`player3dcheck` 43/43、`posecheck` 48/48、`harness` 30/30。実機Chrome（127.0.0.1:8766・`?v=2026071802`）で run=前傾ポンプ走行、runshoot=前傾のまま水平ショット（砲口一致）、runcharge=砲口蓄光、`source=player3d`、console error 0 を確認。
+- 公開: **未デプロイ**（ユーザー承認後に push → `https://nekoojisan-labo.github.io/cobalt-bolt/?v=2026071802`）。ロールバックは `archive/20260718-pre-athletic-lean/NOTE.txt` 手順。
+- 次: ユーザー実操作評価。追加調整は (a) 前傾量=RUN_PELVIS_LEAN（変更時は衝突再監査必須） (b) 腕振り振幅（scratchのsweep手法を再利用）。
+
+## 2026-07-18 — [claude] run-lean: 「直立のまま走る」を体幹前傾＋頭部追従で解消（不足と評価され run-athletic で置換）
 - ユーザー評価（公開版 2026071702 への実操作フィードバック）: 「キャラのポーズが直立状態で、そのまま走る動作をするから不自然」。
 - R1/R2: 描画側は正常（実機で `source=player3d` / run 20コマの距離同期を確認）。原因は素材のポーズ設計で、(a) 体幹前傾が spine 11.5°のみ (b) `DEF_head z=-torso_lean` の完全逆補正で背の高いヘルメットシルエットが常に垂直 (c) 腕振り振幅が小さい、の3点により実寸で「その場足踏み」に読めた。
 - R4: 変更前の `render_motion_previews.py`・8素材・砲口anchorsを `blender/hero/archive/20260718-pre-forward-lean/` に固定（変更前HEAD=458c808）。
