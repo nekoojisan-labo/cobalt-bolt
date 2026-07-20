@@ -1,5 +1,22 @@
 # HANDOFF — Claude ↔ Codex 協働ログ（新しい順に上へ追記）
 
+## 2026-07-18 — [claude] run-wide-stride: 本家MMX実測準拠の脚周期へ書き直し（ローカル反映・デプロイ待ち）
+- ユーザー指示: 「どんどん作画が変になってるからロックマンの動きを参考にしたい」→ 実物リサーチ承認後「立ち姿、動作のポーズなどきちんと作って欲しい」。
+- 現物接地（G2相当）: SNES版ロックマンX の走り10コマ実スプライトを取得しコマ分解（`~/Documents/gazoubiruda/cobalt-bolt-reference/`・Capcom素材のため公開リポジトリ外に保管）。実測: シルエット幅/高さ比が1周期で 0.59→1.03 と振れる＝**低く長い前後シザー**が本質。脚は高く上げず、蹴り出しで後脚ほぼ伸展・前脚は低い前方リーチを保持、上下バウンスは僅少。run-athletic (7e5b194) 後も旧 RUN_PHASES のままの脚は 0.57→0.73 に留まり「膝上げ足踏み」読みが残存していた。
+- 実装（`render_motion_previews.py` RUN_PHASES 全面書換＋`audit_motion_cycles.py`/`validate_motion_readability.py` の設計ゲート更新。上半身・骨盤リーン9°・照準系は run-athletic のまま不変）:
+  - 空中局面をワイドシザーへ: 離地直後は後脚ほぼ伸展（37°/膝26°）のまま、前脚は膝ドライブ→低い前方リーチ保持（-20〜-40°/膝2-12°）で次接地へ。回収脚はヒールアップ（膝80-88°折り）で膝抜け。
+  - flight root_z を最大 0.32→0.13 に低減（本家は地面に張り付く）。
+  - **接地足ロールを新設**（`apply_contact_foot`・`foot_pitch`キー）: ヒールストライク(-1°)→フラット→トウオフ(+1°)。接地3コマの足高を 0.020±0.0002 に揃えつつ膝屈曲を装甲干渉安全圏（≤23.4°・KneeCap↔ThighFrontPlate 実測閾値）に保つ手段として導入。
+  - 監査の計測を修正: `sole_x`（最低点±0.02の頂点平均）は足ロールでヒール/トウ間へ±0.3飛ぶため、plant/pass 判定を IK が固定する**足首アンカー `anchor_x`** に変更（設計意図＝接地点がroot移動を相殺、は不変。ロール滑りは±0.012BU＝実寸0.06px未満）。
+  - 設計ゲート更新: `run_lead_knee` 系を「膝折り88-105°を空中f4で」→「回収折り80-105°をf8/f18・前方ドライブ≥36°を対側接地f1/f11で」に再配置（本家は折りとドライブが同時でなく順次）。readability の跳ね系閾値 pelvis span 0.35→0.15 / 両足クリアランス 0.45→0.22 / silhouette min 0.45→0.27（横方向ゲート＝つま先分離58px・膝28px・腕24pxは全通過が前提のまま）。
+  - `apply_run_shot_recoil` 新設（run_shoot専用・spine深め）: 低root_z化で2px可視床を割った反動を分離調整（stand/jumpの共有プロファイル不変）。
+  - `ASSET_VER='2026071804'`。`PLAYER3D_MUZZLE` を新anchorsから機械再生成（申し送り遵守）。
+- 検証: audit 124frames/新規・悪化衝突0/不変条件0、validate_game_sprites 8/124 OK、validate_motion_readability failures 0、player3dcheck 43/43、posecheck 48/48、harness 30/30。実機（127.0.0.1:8766・`?v=2026071804`・実寸crop）で接地〜空中6局面が前傾ワイドストライドの走行として読めることを確認。console error 0。ストリップ実測 aspect 0.42→0.79（旧0.57→0.73・跳ね上限0.32時代より横に伸びた）。
+- 既知の限界: 接地〜パス局面の横幅は本家（最大1.03）に未達。原因は体型（脚が体高比で短い）＋64px/20tick契約＋IK到達限界（前0.58/後-0.69が伸び切り）で、これ以上は造形変更（脚長）か接地クラウチ深化（要 KneeCap↔ThighFrontPlate 装甲改修）が必要。候補として次回へ。
+- 退避: `blender/hero/archive/20260718-pre-wide-stride/`（変更前HEAD=716dcee）。
+- 公開: **未デプロイ**（combat-idle・run-athletic と合わせてユーザー承認後に push → `?v=2026071804`）。
+- 次: ユーザー実操作評価。並行セッションへ: RUN_PHASES のキー構造に `foot_pitch` が増えています。ポーズ変更時は scratchpad の probe スクリプト方式（min_z/flex 実測スイープ）を推奨。
+
 ## 2026-07-18 — [claude] combat-idle: 待機を「気をつけ」から戦闘構えへ（ローカル反映・デプロイ待ち）
 - ユーザー指示: 「通常の立ち姿もまっすぐ立ってるんじゃなくて、戦うために構えてるポーズにする」＋「レンダリング済みモデルが使われているか」の確認。
 - 使用状況の回答: 8モーション全て（idle/shoot/charge/run/runshoot/runcharge/jump/jumpshoot）が `player3d_*.png`（Blenderレンダー）を本番経路で使用中（`resolvePlayer3DVisual`→`source=player3d` を実機確認）。例外は被弾のみ＝3D未制作でidle点滅表示（旧 `player_hurt.png` はフォールバック専用）。
