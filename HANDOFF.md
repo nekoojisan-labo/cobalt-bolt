@@ -1,5 +1,11 @@
 # HANDOFF — Claude ↔ Codex 協働ログ（新しい順に上へ追記）
 
+## 2026-07-20 — [claude] deploy: モーション改修一式を公開（ユーザー要請）
+- ユーザーが公開リンクからの確認を要望 → 復旧タグ `pre-motion-deploy-20260720`（=旧公開 458c808）作成後、`main` を 3c5adc4 へ fast-forward push。
+- Pagesの自動ビルドが走らなかったため `gh api POST pages/builds` で手動トリガー → built(3c5adc4) 確認。
+- 公開URL実機検証: ASSET_VER=2026071804 配信・戦闘構えidle・ワイドストライド走行・射撃の実寸cropで確認。公開内容=シェル版ヒーロー＋本家準拠モーション一式（run-athletic/combat-idle/wide-stride）。生成キャラは保留のまま（hero-gen-hold参照）。
+- ロールバック: `git push origin pre-motion-deploy-20260720:main --force-with-lease` か復旧タグからのfast-forward。
+
 ## 2026-07-20 — [claude] hero-gen-hold: 生成キャラを品質不足で保留・シェル版へ復帰（ローカル）
 - ユーザー指摘「造形がぶっ壊れてない？」→ 全コマ精査で確認: 生成キャラは肘ジュエル浮遊・輪郭ギザつき・腕融合の板状アーティファクトが実用基準未達。修復を10回超イテレーションした結論:
   - **根本原因はRodin Sketchティアの素性**: ①3,671断片の開いた薄板メッシュ（Bone Heat不成立・剛体バインドは境界破綻） ②左腕が体側に密着した非対称ポーズで、ボクセルリメッシュすると脇〜腰に融合膜が生成され、ポーズで必然的にテントする（実測: f12でエッジ伸長>1.6が2,760頂点・腕/脚/胴の境界全域）。
